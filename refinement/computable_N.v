@@ -36,60 +36,63 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-
 (** This module should not be used directly. *)
 Module Native.
-  Definition t := N.
-  Definition eq   : t -> t -> bool  := N.eqb.
-  Definition zero : t               := 0%N.
-  Definition one  : t               := 1%N.
-  Definition add  : t -> t -> t     := N.add.
-  Definition sub  : t -> t -> t     := N.sub.
+  Definition Int := N.
+  Definition zero : Int := 0%N.
+  Definition one  : Int := 1%N.
+  Definition eq   : Int -> Int -> bool  := N.eqb.
+  Definition add  : Int -> Int -> Int     := N.add.
+  Definition sub  : Int -> Int -> Int     := N.sub.
 
   (* TODO *)
-  Definition opp  : t -> t          := fun _ => 0%N.
+  Definition opp  : Int -> Int := fun _ => 0%N.
   (* TODO *)
-  Definition lnot : t -> t          := fun _ => 0%N.
+  Definition lnot : Int -> Int := fun _ => 0%N.
 
   (* Bit ops *)
-  Definition lor  : t -> t -> t     := N.lor.
-  Definition lxor : t -> t -> t     := N.lxor.
-  Definition land : t -> t -> t     := N.land.
-  Definition lsr  : t -> t -> t     := N.shiftr.
-  Definition lsl  : t -> t -> t     := N.shiftl.
+  Definition lor  : Int -> Int -> Int := N.lor.
+  Definition lxor : Int -> Int -> Int := N.lxor.
+  Definition land : Int -> Int -> Int := N.land.
+  Definition lsr  : Int -> Int -> Int := N.shiftr.
+  Definition lsl  : Int -> Int -> Int := N.shiftl.
+
+  (* Succ, pred *)
+  Definition succ : Int -> Int  := N.succ.
+  Definition pred : Int -> Int  := N.pred.
 
 End Native.
 
 Import Native.
 
-Global Instance   eq_Native : eq_of   t := eq.
+Global Instance   eq_Native : eq_of   Int := eq.
 
-Global Instance zero_Native : zero_of t := zero.
-Global Instance  one_Native : one_of  t := one.
-Global Instance  opp_Native : opp_of  t := opp.
-Global Instance  sub_Native : sub_of  t := sub.
-Global Instance  add_Native : add_of  t := add.
+Global Instance zero_Native : zero_of Int := zero.
+Global Instance  one_Native : one_of  Int := one.
+Global Instance  opp_Native : opp_of  Int := opp.
+Global Instance  sub_Native : sub_of  Int := sub.
+Global Instance  add_Native : add_of  Int := add.
 
-Global Instance  not_Native : not_of  t := lnot.
-Global Instance   or_Native : or_of   t := lor.
-Global Instance  and_Native : and_of  t := land.
-Global Instance  xor_Native : xor_of  t := lxor.
-Global Instance  shl_Native : shl_of  t t := lsl.
-Global Instance  shr_Native : shr_of  t t := lsr.
+Global Instance  not_Native : not_of  Int := lnot.
+Global Instance   or_Native : or_of   Int := lor.
+Global Instance  and_Native : and_of  Int := land.
+Global Instance  xor_Native : xor_of  Int := lxor.
+Global Instance  shl_Native : shl_of  Int Int := lsl.
+Global Instance  shr_Native : shr_of  Int Int := lsr.
 
 Section BitRepr.
 
 Variable n : nat.
 Implicit Types (s : bitseq) (b : 'B_n).
 
-Fixpoint bitsToInt s : t :=
+Fixpoint bitsToInt s : Int :=
   (match s with
     | [::]           => 0
     | [:: false & s] =>      bitsToInt s :<<: 1
     | [:: true  & s] => 1 || (bitsToInt s :<<: 1)
   end)%C.
 
-Fixpoint bitsFromInt (k : nat) (n : t) : bitseq :=
+Fixpoint bitsFromInt (k : nat) (n : Int) : bitseq :=
   (match k with
     | 0 => [::]
     | k.+1 =>
@@ -97,12 +100,12 @@ Fixpoint bitsFromInt (k : nat) (n : t) : bitseq :=
       ((n && 1) == 1) :: p
   end)%C.
 
-Lemma bitsFromIntP {k} (i: t): size (bitsFromInt k i) == k.
+Lemma bitsFromIntP {k} (i: Int): size (bitsFromInt k i) == k.
 Proof.
   elim: k i => // [k IH] i //=; rewrite eqSS //.
 Qed.
 
-Canonical bitsFromInt_tuple (i : t): 'B_n
+Canonical bitsFromInt_tuple (i : Int): 'B_n
   := Tuple (bitsFromIntP i).
 
 End BitRepr.
@@ -118,7 +121,7 @@ Module MakeOps (WS: WORDSIZE).
 
 Definition w := WS.wordsize.
 
-Definition Int  := Native.t.
+Definition Int  := Native.Int.
 Definition eq   := Native.eq.
 Definition zero := Native.zero.
 Definition one  := Native.one.
@@ -127,36 +130,21 @@ Definition land := Native.land.
 Definition lsr  := Native.lsr.
 Definition lxor := Native.lxor.
 
-Definition wordsize := bitsToInt (bitn 63 WS.wordsize).
+Definition succ := Native.succ.
+Definition pred := Native.pred.
+
+(* Definition wordsize := bitsToInt (bitn 63 WS.wordsize).
 
 Definition bitmask := ((1 :<<: wordsize) - 1: Int)%C.
 
 Definition mask_unop  (f : Int -> Int) x := (bitmask && f x)%C.
-Definition mask_binop (f : Int -> Int -> Int) x y := (bitmask && f x y)%C.
+Definition mask_binop (f : Int -> Int -> Int) x y := (bitmask && f x y)%C. *)
 
-Definition lnot := mask_unop Native.lnot.
-Definition opp  := mask_unop Native.opp.
+Definition lnot := Native.lnot.
+Definition opp  := Native.opp.
 
-Definition lsl := mask_binop Native.lsl.
-Definition add := mask_binop Native.add.
-Definition sub := mask_binop Native.sub.
+Definition lsl := Native.lsl.
+Definition add := Native.add.
+Definition sub := Native.sub.
 
 End MakeOps.
-
-Module Wordsize_32.
-  Definition wordsize := 32.
-End Wordsize_32.
-
-Module Int32 := MakeOps(Wordsize_32).
-
-Module Wordsize_16.
-  Definition wordsize := 16.
-End Wordsize_16.
-
-Module Int16 := MakeOps(Wordsize_16).
-
-Module Wordsize_8.
-  Definition wordsize := 8.
-End Wordsize_8.
-
-Module Int8 := MakeOps(Wordsize_8).

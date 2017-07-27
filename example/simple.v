@@ -11,7 +11,7 @@ Import Refinements.Op.
 Import Logical.Op.
 Import Sets.Op.
 
-Let n := 2.
+Let n := 4.
 
 Definition T := [finType of 'I_n].
 
@@ -22,12 +22,21 @@ End Fintype.
 Module R  := Make(Fintype).
 
 
-Let p : {set 'I_2} := set0.
-Let q : {set 'I_2} := set0.
+Let p : {set 'I_4} := setU (set1 ord0) (set1 (Ordinal (erefl (1 < 4)%N))).
+Let q : {set 'I_4} := set0.
+
+(* Instance refine_ord0 : refines R.Rbits ord0 R.Native.zero.
+Proof. Admitted. *)
+
+Require Import NArith.
+
+Global Instance ord_num (m : T) :
+  refines R.Rbits m (N.of_nat ( nat_of_ord m) ).
+Admitted.
 
 Set Typeclasses Debug.
 
-Goal p == q.
+Goal p != q.
 Proof.
   by coqeal.
 Abort.

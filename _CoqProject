@@ -7,11 +7,5 @@ theories/bitocaml.v
 theories/bitword.v
 theories/bitset.v
 theories/notation.v
-extraction/axioms.v
-extraction/specs.v
 refinement/computable_N.v
 refinement/bits_computable.v
-refinement/bits.v
-
-example/bloom.v
-example/queens.v

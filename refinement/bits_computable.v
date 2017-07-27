@@ -65,6 +65,7 @@ Definition Rfin: {set T} -> 'B_#| T | -> Type  := fun_hrel (@finB T).
 Definition Rtuple : 'B_n -> bitseq -> Type :=  fun a b => tval a = b.
 Definition Rnative: bitseq -> Native.Int -> Type := fun_hrel (bitsFromInt Native.w).
 
+Definition Rbitseq : {set T} -> bitseq -> Type := Rfin \o Rtuple.
 Definition Rbitset: {set T} -> Native.Int -> Type := Rfin \o (Rtuple \o Rnative).
 
 (** ** From finite type to machine words: *)
@@ -79,6 +80,8 @@ CoInductive RidxN: nat -> Native.Int -> Type :=
 
 Definition Rbits: T -> Native.Int -> Type :=
   Rord \o (RidxI \o RidxN).
+Definition Rbitsq: T -> nat -> Type :=
+  Rord \o RidxI.
 
 (************************************************************************)
 (** * Notations                                                         *)
@@ -100,7 +103,7 @@ Global Instance  sub_N : sub_of  Native.Int := Native.sub.
 Global Instance  opp_N : opp_of  Native.Int := Native.opp.
 
 Global Instance get_N       : get_of Native.Int Native.Int       := get.
-Global Instance singleton_N : singleton_of Native.Int Native.Int := singleton.
+Global Instance singleton_N : singleton_of Native.Int Native.Int := singleton (Bits := Native.Int).
 Global Instance compl_N     : compl_of Native.Int                := compl.
 Global Instance empty_N     : empty_of Native.Int                := empty (Bits := Native.Int).
 Global Instance full_N      : full_of Native.Int                 := full  (Bits := Native.Int).
@@ -137,12 +140,12 @@ Global Instance  add_S : add_of  bitseq := adds.
 Global Instance  sub_S : sub_of  bitseq := subs.
 
 Global Instance get_S       : get_of nat bitseq       := get.
-Global Instance singleton_S : singleton_of nat bitseq := singleton.
-Global Instance compl_S     : compl_of bitseq            := compl.
+Global Instance singleton_S : singleton_of nat bitseq := singleton (Bits := bitseq).
+Global Instance compl_S     : compl_of bitseq            := compl (Bits := bitseq).
 Global Instance full_S      : full_of bitseq             := full (Bits := bitseq).
 Global Instance empty_S     : empty_of bitseq            := empty (Bits := bitseq).
-Global Instance set_S       : set_of nat bitseq       := insert.
-Global Instance remove_S    : remove_of nat bitseq    := remove.
+Global Instance set_S       : set_of nat bitseq       := insert (Bits := bitseq).
+Global Instance remove_S    : remove_of nat bitseq    := remove (Bits := bitseq).
 Global Instance inter_S     : inter_of bitseq            := inter.
 Global Instance union_S     : union_of bitseq            := union.
 Global Instance symdiff_S   : symdiff_of bitseq          := symdiff.
@@ -580,5 +583,84 @@ eapply refines_trans; tc.
 - param (subset_R (Bits_R := Rtuple)).
 - param (subset_R (Bits_R := Rnative)).
 Qed.
+
+Global Instance Rbitseq_eq:
+  refines (Rbitseq ==> Rbitseq ==> param.bool_R) eq_op eq_op.
+Proof. by do 2 (eapply refines_trans; tc). Qed.
+
+Global Instance Rbitseq_get:
+  refines (Rbitsq ==> Rbitseq ==> param.bool_R) get_op get_op.
+Proof.
+  param_comp get_R; eapply refines_trans; tc.
+Qed.
+
+Global Instance Rbitseq_singleton:
+  refines (Rbitsq==> Rbitseq) singleton_op singleton_op.
+Proof.
+eapply refines_trans; tc.
+eapply refines_trans; tc.
+- param singleton_R.
+Admitted.
+
+Global Instance Rbitseq_empty:
+  refines Rbitseq empty_op empty_op.
+Proof.
+  param_comp empty_R.
+Qed.
+
+Global Instance Rbitseq_full:
+  refines Rbitseq full_op full_op.
+Proof.
+eapply refines_trans; tc.
+eapply refines_trans; tc.
+Admitted.
+
+
+Global Instance Rbitseq_insert:
+  refines (Rbitsq ==> Rbitseq ==> Rbitseq) set_op set_op.
+Proof.
+eapply refines_trans; tc.
+eapply refines_trans; tc.
+Admitted.
+
+Global Instance Rcomps_not:
+  refines (Rtuple ==> Rtuple) ~%C ~%C.
+Proof.
+(* eapply refines_trans; tc. *)
+Admitted.
+
+Global Instance Rbitseq_remove:
+  refines (Rbitseq ==> Rbitsq ==> Rbitseq) remove_op remove_op.
+Proof.
+(*
+eapply refines_trans; tc.
+eapply refines_trans; tc.
+- param remove_R.
+- Local Opaque negs.
+- param (remove_R (Idx_R := RidxN)(Bits_R := Rnative)). *)
+Admitted.
+
+Global Instance Rbitseq_compl:
+  refines (Rbitseq ==> Rbitseq) compl_op compl_op.
+Proof. by eapply refines_trans; tc. Qed.
+
+Global Instance Rbitseq_union:
+  refines (Rbitseq ==> Rbitseq ==> Rbitseq) union_op union_op.
+Proof. by eapply refines_trans; tc; param_comp union_R. Qed.
+
+Global Instance Rbitseq_inter:
+  refines (Rbitseq ==> Rbitseq ==> Rbitseq) inter_op inter_op.
+Proof. by eapply refines_trans; tc; param_comp inter_R. Qed.
+
+Global Instance Rbitseq_symdiff:
+  refines (Rbitseq ==> Rbitseq ==> Rbitseq) symdiff_op symdiff_op.
+Proof. by eapply refines_trans; tc; param_comp symdiff_R. Qed.
+
+Global Instance Rbitseq_subset:
+  refines (Rbitseq ==> Rbitseq ==> bool_R) subset_op subset_op.
+Proof.
+eapply refines_trans; tc.
+eapply refines_trans; tc. param subset_R.
+Admitted.
 
 End Make.

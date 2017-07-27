@@ -24,9 +24,7 @@ End Fintype.
 
 Module R  := Make(Fintype).
 
-Ltac foo := rewrite R.T_eq_n; vm_compute.
-
-Eval vm_compute in R.zero_S.
+Eval vm_compute in R.one_S.
 Eval vm_compute in (fix Ffix (x : nat) : seq bool := match x with
                                          | 0 => [::]
                                          | x0.+1 => false :: Ffix x0
@@ -34,6 +32,7 @@ Eval vm_compute in (fix Ffix (x : nat) : seq bool := match x with
 
 Let p : {set 'I_4} := setU (set1 ord0) (set1 (Ordinal (erefl (1 < 4)%N))).
 Let q : {set 'I_4} := set0.
+Let r : {set 'I_4} := set0.
 
 (* Instance refine_ord0 : refines R.Rbits ord0 R.Native.zero.
 Proof. Admitted. *)
@@ -42,11 +41,13 @@ Require Import NArith.
 
 Global Instance ord_num (m : T) :
   refines R.Rbitsq m (nat_of_ord m).
+Proof.
+  do 2 (eapply refines_trans; tc).
 Admitted.
 
 Set Typeclasses Debug.
 
-Goal p != q.
+Goal q == r.
 Proof.
   by coqeal.
 Abort.

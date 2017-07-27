@@ -288,7 +288,7 @@ by move/(can_inj (@bitFK _)).
 Qed.
 
 (** Rfin' lemmas *)
-Lemma Rfin'_implies_eq : forall a b, Rfin' a b -> (a = b :> bitseq).
+Lemma Rfin'_implies_eq : forall a b, Rfin' a b -> (tval a = b).
 Proof.
   move => a b. by rewrite /Rfin'.
 Qed.
@@ -411,75 +411,6 @@ Qed.
 (* rewrite arg_min_enum_rank. *)
 (* Admitted. *)
 
-(************************************************************************)
-(** * From machine words to bit sequences                               *)
-(************************************************************************)
-
-Global Instance Rnative_eq:
-  refines (Rnative ==> Rnative ==> param.bool_R)%rel (eqtype.eq_op) Native.eq.
-Proof.
-  rewrite !refinesE => bs1 w1 <- bs2 w2 <-.
-  suff -> : Native.eq w1 w2 = (bitsFromInt Native.w w1 == bitsFromInt Native.w w2)
-    by exact: bool_Rxx.
-  (* apply/eqIntP/eqP => [->//|]. *)
-Admitted.
-
-Global Instance Rnative_zero: refines Rnative '0_Native.w Native.zero.
-Proof.
-  rewrite refinesE.
-(*  have /eqIntP -> := Tests.zero_valid.
-  by rewrite /Rnative/fun_hrel Tests.bitsToIntK. *)
-Admitted.
-
-Global Instance Rnative_one: refines Rnative (bitn Native.w 1) Native.one.
-Proof.
-Admitted.
-
-Global Instance Rnative_lnot:
-  refines (Rnative ==> Rnative) negs ~%C.
-Proof.
-Admitted.
-
-Global Instance Rnative_land:
-  refines (Rnative ==> Rnative ==> Rnative) ands Native.land.
-Proof.
-Admitted.
-
-Global Instance Rnative_lor:
-  refines (Rnative ==> Rnative ==> Rnative) ors Native.lor.
-Proof.
-Admitted.
-
-Global Instance Rnative_lxor:
-  refines (Rnative ==> Rnative ==> Rnative) xors Native.lxor.
-Proof.
-Admitted.
-
-Global Instance Rnative_lsr:
-  refines (Rnative ==> RidxN ==> Rnative) shrs Native.lsr.
-Proof.
-Admitted.
-
-Global Instance Rnative_lsl:
-  refines (Rnative ==> RidxN ==> Rnative) shls Native.lsl.
-Proof.
-Admitted.
-
-Global Instance Rnative_add:
-  refines (Rnative ==> Rnative ==> Rnative) adds Native.add.
-Proof.
-Admitted.
-
-Global Instance Rnative_sub:
-  refines (Rnative ==> Rnative ==> Rnative) subs Native.sub.
-Proof.
-Admitted.
-
-Global Instance Rnative_opp:
-  refines (Rnative ==> Rnative) opps Native.opp.
-Proof.
-Admitted.
-
 
 (************************************************************************)
 (** * From bit vectors to bit sequences                                 *)
@@ -596,120 +527,35 @@ Proof. param nand_R. Qed.
 (** * Compositions                                                      *)
 (************************************************************************)
 
-(* Global Instance Rbitset_eq:
-  refines (Rbitset ==> Rbitset ==> param.bool_R) eq_op eq_op.
-Proof. by do 3 (eapply refines_trans; tc). Qed.
-
-Global Instance Rbitset_get:
-  refines (Rbits ==> Rbitset ==> param.bool_R) get_op get_op.
-Proof.
-  param_comp get_R; eapply refines_trans; tc.
-Qed.
-
-Global Instance Rbitset_singleton:
-  refines (Rbits ==> Rbitset) singleton_op singleton_op.
-Proof.
-eapply refines_trans; tc.
-eapply refines_trans; tc.
-- param singleton_R.
-- param (singleton_R (Idx_R := RidxN)(Bits_R := Rnative)).
-Admitted.
-
-Global Instance Rbitset_empty:
-  refines Rbitset empty_op empty_op.
-Proof.
-  param_comp empty_R. eapply refines_trans; tc.
-Qed.
-
-Global Instance Rbitset_full:
-  refines Rbitset full_op full_op.
-Proof.
-eapply refines_trans; tc.
-eapply refines_trans; tc.
-- by param (full_R (Bits_R := Rtuple)).
-    do ?(rewrite refinesE; apply eq_bool_R).
-- param (full_R (Bits_R := Rnative)).
-Admitted.
-
-
-Global Instance Rbitset_insert:
-  refines (Rbits ==> Rbitset ==> Rbitset) set_op set_op.
-Proof.
-eapply refines_trans; tc.
-eapply refines_trans; tc.
-- param insert_R.
-- param (insert_R (Idx_R := RidxN)(Bits_R := Rnative)).
-Admitted.
-
-Global Instance Rcomp_not:
-  refines (Rtuple \o Rnative ==> Rtuple \o Rnative) ~%C ~%C.
-Proof.
-(* eapply refines_trans; tc. *)
-Admitted.
-
-Global Instance Rbitset_remove:
-  refines (Rbitset ==> Rbits ==> Rbitset) remove_op remove_op.
-Proof.
-(*
-eapply refines_trans; tc.
-eapply refines_trans; tc.
-- param remove_R.
-- Local Opaque negs.
-- param (remove_R (Idx_R := RidxN)(Bits_R := Rnative)). *)
-Admitted.
-
-Global Instance Rbitset_compl:
-  refines (Rbitset ==> Rbitset) compl_op compl_op.
-Proof. by eapply refines_trans; tc. Qed.
-
-Global Instance Rbitset_union:
-  refines (Rbitset ==> Rbitset ==> Rbitset) union_op union_op.
-Proof. by eapply refines_trans; tc; param_comp union_R. Qed.
-
-Global Instance Rbitset_inter:
-  refines (Rbitset ==> Rbitset ==> Rbitset) inter_op inter_op.
-Proof. by eapply refines_trans; tc; param_comp inter_R. Qed.
-
-Global Instance Rbitset_symdiff:
-  refines (Rbitset ==> Rbitset ==> Rbitset) symdiff_op symdiff_op.
-Proof. by eapply refines_trans; tc; param_comp symdiff_R. Qed.
-
-Global Instance Rbitset_subset:
-  refines (Rbitset ==> Rbitset ==> bool_R) subset_op subset_op.
-Proof.
-eapply refines_trans; tc.
-eapply refines_trans; tc.
-- param (subset_R (Bits_R := Rtuple)).
-- param (subset_R (Bits_R := Rnative)).
-Qed. *)
-
 Global Instance Rbitseq_eq:
   refines (Rbitseq ==> Rbitseq ==> param.bool_R) eq_op eq_op.
-Proof. do 2 (eapply refines_trans; tc). Admitted.
+Proof. do 2 (eapply refines_trans; tc). Qed.
 
 Global Instance Rbitseq_get:
   refines (Rbitsq ==> Rbitseq ==> param.bool_R) get_op get_op.
 Proof.
-Admitted.
+  param_comp get_R.
+Qed.
 
 Global Instance Rbitseq_singleton:
   refines (Rbitsq ==> Rbitseq) singleton_op singleton_op.
 Proof.
 eapply refines_trans; tc.
 eapply refines_trans; tc.
+param singleton_R; tc.
 Admitted.
 
 Global Instance Rbitseq_empty:
   refines Rbitseq empty_op empty_op.
 Proof.
   do 2 (eapply refines_trans; tc).
-Admitted.
+Qed.
 
 Global Instance Rbitseq_full:
   refines Rbitseq full_op full_op.
 Proof.
 eapply refines_trans; tc.
-eapply refines_trans; tc; tc.
+eapply refines_trans; tc.
 Admitted.
 
 Global Instance Rbitseq_insert:
@@ -719,10 +565,9 @@ eapply refines_trans; tc.
 eapply refines_trans; tc.
 Admitted.
 
-Global Instance Rcomps_not:
+Global Instance Rbitseq_not:
   refines (Rtuple ==> Rtuple) ~%C ~%C.
 Proof.
-(* eapply refines_trans; tc. *)
 Admitted.
 
 Global Instance Rbitseq_remove:
@@ -734,25 +579,22 @@ Admitted.
 
 Global Instance Rbitseq_compl:
   refines (Rbitseq ==> Rbitseq) compl_op compl_op.
-Proof. do 2 (eapply refines_trans; tc). Admitted.
+Proof. param_comp compl_R. Qed.
 
 Global Instance Rbitseq_union:
   refines (Rbitseq ==> Rbitseq ==> Rbitseq) union_op union_op.
-Proof. Admitted.
+Proof. param_comp union_R. Qed.
 
 Global Instance Rbitseq_inter:
   refines (Rbitseq ==> Rbitseq ==> Rbitseq) inter_op inter_op.
-Proof. Admitted.
+Proof. param_comp inter_R. Qed.
 
 Global Instance Rbitseq_symdiff:
   refines (Rbitseq ==> Rbitseq ==> Rbitseq) symdiff_op symdiff_op.
-Proof. Admitted.
+Proof. param_comp symdiff_R. Qed.
 
 Global Instance Rbitseq_subset:
   refines (Rbitseq ==> Rbitseq ==> bool_R) subset_op subset_op.
-Proof.
-eapply refines_trans; tc.
-eapply refines_trans; tc. param subset_R.
-Admitted.
+Proof. param_comp subset_R. Qed.
 
 End Make.

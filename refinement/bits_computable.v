@@ -68,7 +68,7 @@ Module Native := MakeOps(Wordsize).
 (** ** From sets over a finite type to machine words: *)
 
 Definition Rfin: {set T} -> 'B_#|T| -> Type  := fun_hrel (@finB T).
-Definition Rfin' : 'B_#|T| -> 'B_n -> Type := (fun a b => ((a:bitseq) = b)).
+Definition Rfin' : 'B_#|T| -> 'B_n -> Type := (fun a b => (tcast FT.card_of_T a = b)). 
 Definition Rtuple : 'B_n -> bitseq -> Type :=  fun a b => tval a = b.
 Definition Rnative: bitseq -> Native.Int -> Type := fun_hrel (bitsFromInt Native.w).
 
@@ -288,18 +288,33 @@ by move/(can_inj (@bitFK _)).
 Qed.
 
 (** Rfin' lemmas *)
-Lemma Rfin'_implies_eq : forall a b, Rfin' a b -> (tval a = b).
+(*Lemma Rfin'_implies_eq : forall a b, Rfin' a b -> (tval a = b).
 Proof.
   move => a b. by rewrite /Rfin'.
-Qed.
+Qed.*)
 
 Notation RfinC := (Rfin \o Rfin') (only parsing).
 Notation RordC := (Rord \o Rord') (only parsing).
 
 Global Instance Rfin'_eq:
+  refines (Rfin' ==> Rfin' ==> param.bool_R) eq_op eq_op.
+Proof.
+rewrite refinesE => E bs HE E' bs' HE'.
+apply/eq_bool_R; runfold.
+rewrite /Rfin' in HE, HE'.
+rewrite -HE -HE'.
+suff: injective (tcast (T := bool) FT.card_of_T).
+- by move/inj_eq/(_ E E').
+- exact: (can_inj (tcastK FT.card_of_T)).
+Qed.
+
+Global Instance RfinC_eq:
   refines (RfinC ==> RfinC ==> param.bool_R) eq_op eq_op.
 Proof.
-  rewrite refinesE => E bs HE E' bs' HE'. apply/eq_bool_R; runfold.
+  eapply refines_trans; tc.
+Qed.  
+
+rewrite refinesE => E bs HE E' bs' HE'. apply/eq_bool_R; runfold.
   rewrite /Rfin /Rfin' in HE, HE'.
 (* rewrite refinesE=> E bs HE E' bs' HE'; apply/eq_bool_R; runfold.
 by rewrite (inj_eq (can_inj (@bitFK _))).

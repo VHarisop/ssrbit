@@ -44,24 +44,25 @@ Require Import bitocaml bitset.
 
 Module Type FINTYPE.
   Parameter T: finType.
+  Parameter n: nat.
+  Parameter card_of_T : #|T| = n.
 End FINTYPE.
-
 
 Module Make (FT: FINTYPE).
 
 Definition T := FT.T.
+Definition n := FT.n.
 
 Module Wordsize.
-  Definition wordsize := #| T |.
+  Definition wordsize := n.
 End Wordsize.
 
 Module Native := MakeOps(Wordsize).
 
-Definition n := #| T |.
-
 (** ** From sets over a finite type to machine words: *)
 
-Definition Rfin: {set T} -> 'B_#| T | -> Type  := fun_hrel (@finB T).
+Definition Rfin: {set T} -> 'B_#|T| -> Type  := fun_hrel (@finB T).
+Definition Rfin' : 'B_#|T| -> 'B_n -> Type := (fun a b => ((a: bitseq) = b)).
 Definition Rtuple : 'B_n -> bitseq -> Type :=  fun a b => tval a = b.
 Definition Rnative: bitseq -> Native.Int -> Type := fun_hrel (bitsFromInt Native.w).
 

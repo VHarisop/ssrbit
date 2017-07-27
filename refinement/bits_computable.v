@@ -52,6 +52,12 @@ Module Make (FT: FINTYPE).
 
 Definition T := FT.T.
 Definition n := FT.n.
+Definition FT_T_eq_n := FT.card_of_T.
+
+Lemma T_eq_n : #|T| = n.
+Proof.
+  by rewrite FT_T_eq_n /n.
+Qed.
 
 Module Wordsize.
   Definition wordsize := n.
@@ -62,16 +68,17 @@ Module Native := MakeOps(Wordsize).
 (** ** From sets over a finite type to machine words: *)
 
 Definition Rfin: {set T} -> 'B_#|T| -> Type  := fun_hrel (@finB T).
-Definition Rfin' : 'B_#|T| -> 'B_n -> Type := (fun a b => ((a: bitseq) = b)).
+Definition Rfin' : 'B_#|T| -> 'B_n -> Type := (fun a b => ((a:bitseq) = b)).
 Definition Rtuple : 'B_n -> bitseq -> Type :=  fun a b => tval a = b.
 Definition Rnative: bitseq -> Native.Int -> Type := fun_hrel (bitsFromInt Native.w).
 
-Definition Rbitseq : {set T} -> bitseq -> Type := Rfin \o Rtuple.
-Definition Rbitset: {set T} -> Native.Int -> Type := Rfin \o (Rtuple \o Rnative).
+Definition Rbitseq : {set T} -> bitseq -> Type := Rfin \o Rfin' \o Rtuple.
+Definition Rbitset: {set T} -> Native.Int -> Type := Rfin \o (Rfin' \o (Rtuple \o Rnative)).
 
 (** ** From finite type to machine words: *)
 
 Definition Rord: T -> 'I_#| T | -> Type := fun t n => enum_rank t = n.
+Definition Rord': 'I_#| T | -> 'I_n -> Type := fun t t' => val t = val t'.
 Definition RidxI: 'I_n -> nat -> Type := fun k n => val k = n.
 CoInductive RidxN: nat -> Native.Int -> Type :=
   Ridx_spec (k: nat)(i: Native.Int)(b: bitseq) of
@@ -80,9 +87,9 @@ CoInductive RidxN: nat -> Native.Int -> Type :=
   & b = bitn #| T | k : RidxN k i.
 
 Definition Rbits: T -> Native.Int -> Type :=
-  Rord \o (RidxI \o RidxN).
+  Rord \o (Rord' \o (RidxI \o RidxN)).
 Definition Rbitsq: T -> nat -> Type :=
-  Rord \o RidxI.
+  Rord \o Rord' \o RidxI.
 
 (************************************************************************)
 (** * Notations                                                         *)
@@ -129,8 +136,8 @@ Admitted.
 without them. *)
 
 Global Instance eq_s   : eq_of bitseq   := fun x y => x == y.
-Global Instance zero_S : zero_of bitseq := '0_#| T |.
-Global Instance  one_S : one_of  bitseq := bitn #| T | 1.
+Global Instance zero_S : zero_of bitseq := '0_n.
+Global Instance  one_S : one_of  bitseq := bitn n 1.
 Global Instance   or_S : or_of   bitseq := ors.
 Global Instance  shl_S : shl_of  nat bitseq := shls.
 Global Instance  and_S : and_of  bitseq := ands.
@@ -280,6 +287,96 @@ apply/setIidPl/eqP; rewrite -Finter_morphL; last by move->.
 by move/(can_inj (@bitFK _)).
 Qed.
 
+(** Rfin' lemmas *)
+Lemma Rfin'_implies_eq : forall a b, Rfin' a b -> (a = b :> bitseq).
+Proof.
+  move => a b. by rewrite /Rfin'.
+Qed.
+
+Notation RfinC := (Rfin \o Rfin') (only parsing).
+Notation RordC := (Rord \o Rord') (only parsing).
+
+Global Instance Rfin'_eq:
+  refines (RfinC ==> RfinC ==> param.bool_R) eq_op eq_op.
+Proof.
+  rewrite refinesE => E bs HE E' bs' HE'. apply/eq_bool_R; runfold.
+  rewrite /Rfin /Rfin' in HE, HE'.
+(* rewrite refinesE=> E bs HE E' bs' HE'; apply/eq_bool_R; runfold.
+by rewrite (inj_eq (can_inj (@bitFK _))).
+Qed. *)
+Admitted.
+
+Global Instance Rfin'_get:
+  refines (RordC ==> RfinC ==> param.bool_R) get_op get_op.
+Proof.
+(* rewrite refinesE => t _ <- E2 bs2 <-; apply eq_bool_R; runfold.
+by rewrite /finB can_enum inE mem_setb gets_def !size_tuple bitn_zero.
+Qed. *)
+Admitted.
+
+Global Instance Rfin'_singleton:
+    refines (RordC ==> RfinC) singleton_op singleton_op.
+Proof.
+(* rewrite refinesE => t _ <-; runfold; apply/setP=> x.
+rewrite /singleton /shl_op /shl_B /one_op /one_B /finB.
+by rewrite !inE can_enum inE mem_setB tnth_shlB_one (inj_eq enum_rank_inj). *)
+Admitted.
+
+Global Instance Rfin'_full :
+  refines RfinC full_op full_op.
+Proof.
+rewrite refinesE; do 3!runfold.
+Admitted.
+
+Global Instance Rfin'_empty :
+  refines RfinC empty_op empty_op.
+Proof.
+(* rewrite refinesE; do 2!runfold.
+by apply/setP=> t; rewrite can_enum inE mem_setb nth_nseq ltn_ord inE.
+Qed.*)
+Admitted.
+
+Global Instance Rfin'_insert:
+  refines (RordC ==> RfinC ==> RfinC) set_op set_op.
+Proof.
+(* rewrite refinesE => t _ <- E bs2 <-; do 2!runfold.
+apply/setP=> x.
+rewrite !can_enum inE mem_setB !tnth_liftz 3!inE orbC mem_setB tnth_shlB_one.
+by rewrite (inj_eq enum_rank_inj) eq_sym.
+Qed.*)
+Admitted.
+
+
+Global Instance Rfin'_remove:
+  refines (RfinC ==> RordC ==> RfinC) remove_op remove_op.
+Proof.
+Admitted.
+
+Global Instance Rfin'_compl :
+  refines (RfinC ==> RfinC) compl_op compl_op.
+Proof.
+Admitted.
+
+Global Instance Rfin'_union:
+  refines (RfinC ==> RfinC ==> RfinC) union_op union_op.
+Proof.
+Admitted.
+
+Global Instance Rfin'_inter:
+  refines (RfinC ==> RfinC ==> RfinC) inter_op inter_op.
+Proof.
+Admitted.
+
+Global Instance Rfin'_symdiff:
+  refines (RfinC ==> RfinC ==> RfinC) symdiff_op symdiff_op.
+Proof.
+Admitted.
+
+Global Instance Rfin'_subset:
+  refines (RfinC ==> RfinC ==> bool_R) subset_op subset_op.
+Proof.
+Admitted.
+
 (* Definition cardTT (A : {set T}) := #|A|. *)
 (* Global Instance Rfin_cardinal: *)
 (*   refines (Rfin ==> eq) (cardTT) (fun x => nats (cardinal_smart x)). *)
@@ -383,6 +480,7 @@ Global Instance Rnative_opp:
 Proof.
 Admitted.
 
+
 (************************************************************************)
 (** * From bit vectors to bit sequences                                 *)
 (************************************************************************)
@@ -429,21 +527,21 @@ Global Instance Rtuple_add:
   refines (Rtuple ==> Rtuple ==> Rtuple) (@addB _) adds.
 Proof.
 rewrite !refinesE => bs1 w1 <- bs2 w2 <-.
-by rewrite (adds_relE (k := #| T |)(bv1 := bs1)(bv2 := bs2)).
+by rewrite (adds_relE (k := n) (bv1 := bs1)(bv2 := bs2)).
 Qed.
 
 Global Instance Rtuple_sub:
   refines (Rtuple ==> Rtuple ==> Rtuple) (@subB _) subs.
 Proof.
 rewrite !refinesE => bs1 w1 <- bs2 w2 <-.
-by rewrite (subs_relE (k := #| T |)(bv1 := bs1)(bv2 := bs2)).
+by rewrite (subs_relE (k := n)(bv1 := bs1)(bv2 := bs2)).
 Qed.
 
 Global Instance Rtuple_opp:
   refines (Rtuple ==> Rtuple) (@oppB _) opps.
 Proof.
 rewrite !refinesE => bs w <- .
-by rewrite (opps_relE (k := #| T |)(bv := bs)).
+by rewrite (opps_relE (k := n)(bv := bs)).
 Qed.
 
 
@@ -498,9 +596,9 @@ Proof. param nand_R. Qed.
 (** * Compositions                                                      *)
 (************************************************************************)
 
-Global Instance Rbitset_eq:
+(* Global Instance Rbitset_eq:
   refines (Rbitset ==> Rbitset ==> param.bool_R) eq_op eq_op.
-Proof. by do 2 (eapply refines_trans; tc). Qed.
+Proof. by do 3 (eapply refines_trans; tc). Qed.
 
 Global Instance Rbitset_get:
   refines (Rbits ==> Rbitset ==> param.bool_R) get_op get_op.
@@ -583,39 +681,36 @@ eapply refines_trans; tc.
 eapply refines_trans; tc.
 - param (subset_R (Bits_R := Rtuple)).
 - param (subset_R (Bits_R := Rnative)).
-Qed.
+Qed. *)
 
 Global Instance Rbitseq_eq:
   refines (Rbitseq ==> Rbitseq ==> param.bool_R) eq_op eq_op.
-Proof. by do 2 (eapply refines_trans; tc). Qed.
+Proof. do 2 (eapply refines_trans; tc). Admitted.
 
 Global Instance Rbitseq_get:
   refines (Rbitsq ==> Rbitseq ==> param.bool_R) get_op get_op.
 Proof.
-  param_comp get_R; eapply refines_trans; tc.
-Qed.
+Admitted.
 
 Global Instance Rbitseq_singleton:
-  refines (Rbitsq==> Rbitseq) singleton_op singleton_op.
+  refines (Rbitsq ==> Rbitseq) singleton_op singleton_op.
 Proof.
 eapply refines_trans; tc.
 eapply refines_trans; tc.
-- param singleton_R.
 Admitted.
 
 Global Instance Rbitseq_empty:
   refines Rbitseq empty_op empty_op.
 Proof.
-  param_comp empty_R.
-Qed.
+  do 2 (eapply refines_trans; tc).
+Admitted.
 
 Global Instance Rbitseq_full:
   refines Rbitseq full_op full_op.
 Proof.
 eapply refines_trans; tc.
-eapply refines_trans; tc.
+eapply refines_trans; tc; tc.
 Admitted.
-
 
 Global Instance Rbitseq_insert:
   refines (Rbitsq ==> Rbitseq ==> Rbitseq) set_op set_op.
@@ -633,29 +728,25 @@ Admitted.
 Global Instance Rbitseq_remove:
   refines (Rbitseq ==> Rbitsq ==> Rbitseq) remove_op remove_op.
 Proof.
-(*
 eapply refines_trans; tc.
 eapply refines_trans; tc.
-- param remove_R.
-- Local Opaque negs.
-- param (remove_R (Idx_R := RidxN)(Bits_R := Rnative)). *)
 Admitted.
 
 Global Instance Rbitseq_compl:
   refines (Rbitseq ==> Rbitseq) compl_op compl_op.
-Proof. by eapply refines_trans; tc. Qed.
+Proof. do 2 (eapply refines_trans; tc). Admitted.
 
 Global Instance Rbitseq_union:
   refines (Rbitseq ==> Rbitseq ==> Rbitseq) union_op union_op.
-Proof. by eapply refines_trans; tc; param_comp union_R. Qed.
+Proof. Admitted.
 
 Global Instance Rbitseq_inter:
   refines (Rbitseq ==> Rbitseq ==> Rbitseq) inter_op inter_op.
-Proof. by eapply refines_trans; tc; param_comp inter_R. Qed.
+Proof. Admitted.
 
 Global Instance Rbitseq_symdiff:
   refines (Rbitseq ==> Rbitseq ==> Rbitseq) symdiff_op symdiff_op.
-Proof. by eapply refines_trans; tc; param_comp symdiff_R. Qed.
+Proof. Admitted.
 
 Global Instance Rbitseq_subset:
   refines (Rbitseq ==> Rbitseq ==> bool_R) subset_op subset_op.

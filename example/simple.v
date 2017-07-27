@@ -11,33 +11,22 @@ Import Refinements.Op.
 Import Logical.Op.
 Import Sets.Op.
 
-Let n := 100%N.
+Let n := 4%N.
 
 Definition T := [finType of 'I_n].
 
-Module Fintype : FINTYPE with Definition T := T.
-  Definition T: finType := T.
+Module Fintype : FINTYPE with Definition n := 4 with Definition T := T.
+  Definition T := T.
+  Definition n := 4.
+  Lemma card_of_T : #|T| = n.
+  Proof. by rewrite card_ord. Qed.
 End Fintype.
 
 Module R  := Make(Fintype).
 
-Lemma foo_lemma : #|T| = n.
-Admitted.
-  
-Ltac foo := erewrite foo_lemma; vm_compute. 
+Ltac foo := rewrite R.T_eq_n; vm_compute.
 
-Definition RTton := 'B_#|T| -> 'B_n -> Type :=  fun a b => tval a = b.
-
-Global Instance Rfoo :
-  refines Rfin full_op full_op.
-
-Goal R.zero_S = [:: false; false; false; false].
-  cbv.
-  rewrite foo_lemma.
-
-  foo.
-  
-Eval foo in R.zero_S.
+Eval vm_compute in R.zero_S.
 Eval vm_compute in (fix Ffix (x : nat) : seq bool := match x with
                                          | 0 => [::]
                                          | x0.+1 => false :: Ffix x0
@@ -52,7 +41,7 @@ Proof. Admitted. *)
 Require Import NArith.
 
 Global Instance ord_num (m : T) :
-  refines R.Rbits m (N.of_nat ( nat_of_ord m) ).
+  refines R.Rbitsq m (nat_of_ord m).
 Admitted.
 
 Set Typeclasses Debug.

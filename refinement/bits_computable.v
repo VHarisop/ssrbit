@@ -296,37 +296,70 @@ Qed.*)
 Notation RfinC := (Rfin \o Rfin') (only parsing).
 Notation RordC := (Rord \o Rord') (only parsing).
 
+Lemma tcast_injective : injective (tcast (T := bool) FT.card_of_T).
+Proof. exact: can_inj (tcastK FT.card_of_T). Qed.
+
 Global Instance Rfin'_eq:
   refines (Rfin' ==> Rfin' ==> param.bool_R) eq_op eq_op.
 Proof.
-rewrite refinesE => E bs HE E' bs' HE'.
-apply/eq_bool_R; runfold.
-rewrite /Rfin' in HE, HE'.
-rewrite -HE -HE'.
-suff: injective (tcast (T := bool) FT.card_of_T).
-- by move/inj_eq/(_ E E').
-- exact: (can_inj (tcastK FT.card_of_T)).
+rewrite refinesE => E bs HE E' bs' HE'. apply/eq_bool_R; runfold.
+rewrite /Rfin' in HE, HE'; rewrite -HE -HE'.
+by move: tcast_injective; move/inj_eq/(_ E E').
 Qed.
 
-Global Instance RfinC_eq:
-  refines (RfinC ==> RfinC ==> param.bool_R) eq_op eq_op.
-Proof.
-  eapply refines_trans; tc.
-Qed.  
 
-rewrite refinesE => E bs HE E' bs' HE'. apply/eq_bool_R; runfold.
-  rewrite /Rfin /Rfin' in HE, HE'.
-(* rewrite refinesE=> E bs HE E' bs' HE'; apply/eq_bool_R; runfold.
-by rewrite (inj_eq (can_inj (@bitFK _))).
-Qed. *)
+Global Instance Rfin'_empty:
+  refines Rfin' empty_op empty_op.
+Proof.
+  rewrite refinesE; rewrite /Rfin'; apply/eqP.
+  have : val (tcast FT.card_of_T empty_op) == val empty_op.
+  - move => n. rewrite val_tcast /=. admit.
+  - move => Heq. rewrite -(inj_eq val_inj); exact: Heq.
+Admitted.
+
+Global Instance Rfin'_full:
+  refines Rfin' full_op full_op.
+Proof.
+  rewrite refinesE; rewrite /Rfin'; apply/eqP.
+  have : val (tcast FT.card_of_T full_op) == val full_op.
+  - move => n. rewrite val_tcast. admit.
+  - move => Heq. rewrite -(inj_eq val_inj); exact: Heq.
+Admitted.
+
+Global Instance Rfin'_compl :
+  refines (Rfin' ==> Rfin') compl_op compl_op.
+Proof.
+Admitted.
+
+Global Instance Rfin'_union:
+  refines (Rfin' ==> Rfin' ==> Rfin') union_op union_op.
+Proof.
+  rewrite refinesE => E bs HE E' bs' HE'.
+Admitted.
+
+Global Instance Rfin'_insert:
+  refines (Rord' ==> Rfin' ==> Rfin') set_op set_op.
+Proof.
+  rewrite refinesE => v v'; rewrite /Rord' => H.
+  move => b2 bs2; rewrite /Rfin' => Hb.
+(* apply/setP=> x.
+rewrite !can_enum inE mem_setB !tnth_liftz 3!inE orbC mem_setB tnth_shlB_one.
+by rewrite (inj_eq enum_rank_inj) eq_sym. *)
+Admitted.
+
+Global Instance Rfin'_remove:
+  refines (Rfin' ==> Rord' ==> Rfin') remove_op remove_op.
+Proof.
+(* apply/setP=> x.
+rewrite !can_enum inE mem_setB !tnth_liftz 3!inE orbC mem_setB tnth_shlB_one.
+by rewrite (inj_eq enum_rank_inj) eq_sym. *)
 Admitted.
 
 Global Instance Rfin'_get:
   refines (RordC ==> RfinC ==> param.bool_R) get_op get_op.
 Proof.
 (* rewrite refinesE => t _ <- E2 bs2 <-; apply eq_bool_R; runfold.
-by rewrite /finB can_enum inE mem_setb gets_def !size_tuple bitn_zero.
-Qed. *)
+by rewrite /finB can_enum inE mem_setb gets_def !size_tuple bitn_zero. *)
 Admitted.
 
 Global Instance Rfin'_singleton:
@@ -334,63 +367,66 @@ Global Instance Rfin'_singleton:
 Proof.
 (* rewrite refinesE => t _ <-; runfold; apply/setP=> x.
 rewrite /singleton /shl_op /shl_B /one_op /one_B /finB.
-by rewrite !inE can_enum inE mem_setB tnth_shlB_one (inj_eq enum_rank_inj). *)
-Admitted.
-
-Global Instance Rfin'_full :
-  refines RfinC full_op full_op.
-Proof.
-rewrite refinesE; do 3!runfold.
-Admitted.
-
-Global Instance Rfin'_empty :
-  refines RfinC empty_op empty_op.
-Proof.
-(* rewrite refinesE; do 2!runfold.
-by apply/setP=> t; rewrite can_enum inE mem_setb nth_nseq ltn_ord inE.
-Qed.*)
-Admitted.
-
-Global Instance Rfin'_insert:
-  refines (RordC ==> RfinC ==> RfinC) set_op set_op.
-Proof.
-(* rewrite refinesE => t _ <- E bs2 <-; do 2!runfold.
-apply/setP=> x.
-rewrite !can_enum inE mem_setB !tnth_liftz 3!inE orbC mem_setB tnth_shlB_one.
-by rewrite (inj_eq enum_rank_inj) eq_sym.
-Qed.*)
-Admitted.
-
-
-Global Instance Rfin'_remove:
-  refines (RfinC ==> RordC ==> RfinC) remove_op remove_op.
-Proof.
-Admitted.
-
-Global Instance Rfin'_compl :
-  refines (RfinC ==> RfinC) compl_op compl_op.
-Proof.
-Admitted.
-
-Global Instance Rfin'_union:
-  refines (RfinC ==> RfinC ==> RfinC) union_op union_op.
-Proof.
+by rewrite !inE can_enum inE mem_setB tnth_shlB_one (inj_eq enum_rank_inj).*)
 Admitted.
 
 Global Instance Rfin'_inter:
-  refines (RfinC ==> RfinC ==> RfinC) inter_op inter_op.
+  refines (Rfin' ==> Rfin' ==> Rfin') inter_op inter_op.
 Proof.
 Admitted.
 
 Global Instance Rfin'_symdiff:
-  refines (RfinC ==> RfinC ==> RfinC) symdiff_op symdiff_op.
+  refines (Rfin' ==> Rfin' ==> Rfin') symdiff_op symdiff_op.
 Proof.
 Admitted.
 
 Global Instance Rfin'_subset:
-  refines (RfinC ==> RfinC ==> bool_R) subset_op subset_op.
+  refines (Rfin' ==> Rfin' ==> bool_R) subset_op subset_op.
 Proof.
 Admitted.
+
+(** Composition lemmas for RfinC *)
+(** ******************************)
+
+Global Instance RfinC_eq:
+  refines (RfinC ==> RfinC ==> param.bool_R) eq_op eq_op.
+Proof. param_comp eq_R. Qed.
+
+Global Instance RfinC_full :
+  refines RfinC full_op full_op.
+Proof. param_comp full_R. Qed.
+
+Global Instance RfinC_empty :
+  refines RfinC empty_op empty_op.
+Proof. param_comp empty_R. Qed.
+
+Global Instance RfinC_insert:
+  refines (RordC ==> RfinC ==> RfinC) set_op set_op.
+Proof. param_comp set_R. Qed.
+
+Global Instance RfinC_remove:
+  refines (RfinC ==> RordC ==> RfinC) remove_op remove_op.
+Proof. param_comp remove_R. Qed.
+
+Global Instance RfinC_compl :
+  refines (RfinC ==> RfinC) compl_op compl_op.
+Proof. param_comp compl_R. Qed.
+
+Global Instance RfinC_union:
+  refines (RfinC ==> RfinC ==> RfinC) union_op union_op.
+Proof. param_comp union_R. Qed.
+
+Global Instance RfinC_inter:
+  refines (RfinC ==> RfinC ==> RfinC) inter_op inter_op.
+Proof. param_comp inter_R. Qed.
+
+Global Instance RfinC_symdiff:
+  refines (RfinC ==> RfinC ==> RfinC) symdiff_op symdiff_op.
+Proof. param_comp symdiff_R. Qed.
+
+Global Instance RfinC_subset:
+  refines (RfinC ==> RfinC ==> bool_R) subset_op subset_op.
+Proof. param_comp subset_R. Qed.
 
 (* Definition cardTT (A : {set T}) := #|A|. *)
 (* Global Instance Rfin_cardinal: *)

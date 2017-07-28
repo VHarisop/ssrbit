@@ -39,15 +39,22 @@ Proof. Admitted. *)
 
 Require Import NArith.
 
-Global Instance ord_num (m : T) :
-  refines R.Rbitsq m (nat_of_ord m).
+Global Instance ord_num (m : 'I_n) :
+  refines R.Rbitsq m (m).
 Proof.
-  do 2 (eapply refines_trans; tc).
-Admitted.
+  rewrite /R.Rbitsq /R.Rord /R.Rord' /R.RidxI /=.
+  eapply refines_trans; tc.
+  - eapply refines_trans; tc.
+    + rewrite refinesE. exact: erefl.
+    + rewrite refinesE. rewrite enum_rank_ord /=.
+      suff : @nat_of_ord R.n m = m by rewrite //=. by [].
+  - rewrite refinesE /=. suff : @nat_of_ord R.n m = m by rewrite //=.
+    by [].
+Qed.
 
 Set Typeclasses Debug.
 
-Goal q == r.
+Goal q != p.
 Proof.
   by coqeal.
 Abort.

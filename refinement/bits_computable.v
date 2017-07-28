@@ -68,7 +68,7 @@ Module Native := MakeOps(Wordsize).
 (** ** From sets over a finite type to machine words: *)
 
 Definition Rfin: {set T} -> 'B_#|T| -> Type  := fun_hrel (@finB T).
-Definition Rfin' : 'B_#|T| -> 'B_n -> Type := (fun a b => (tcast FT.card_of_T a = b)). 
+Definition Rfin' : 'B_#|T| -> 'B_n -> Type := (fun a b => (tcast T_eq_n a = b)).
 Definition Rtuple : 'B_n -> bitseq -> Type :=  fun a b => tval a = b.
 Definition Rnative: bitseq -> Native.Int -> Type := fun_hrel (bitsFromInt Native.w).
 
@@ -296,8 +296,8 @@ Qed.*)
 Notation RfinC := (Rfin \o Rfin') (only parsing).
 Notation RordC := (Rord \o Rord') (only parsing).
 
-Lemma tcast_injective : injective (tcast (T := bool) FT.card_of_T).
-Proof. exact: can_inj (tcastK FT.card_of_T). Qed.
+Lemma tcast_injective : injective (tcast (T := bool) T_eq_n).
+Proof. exact: can_inj (tcastK T_eq_n). Qed.
 
 Global Instance Rfin'_eq:
   refines (Rfin' ==> Rfin' ==> param.bool_R) eq_op eq_op.
@@ -307,24 +307,25 @@ rewrite /Rfin' in HE, HE'; rewrite -HE -HE'.
 by move: tcast_injective; move/inj_eq/(_ E E').
 Qed.
 
-
 Global Instance Rfin'_empty:
   refines Rfin' empty_op empty_op.
 Proof.
   rewrite refinesE; rewrite /Rfin'; apply/eqP.
-  have : val (tcast FT.card_of_T empty_op) == val empty_op.
-  - move => n. rewrite val_tcast /=. admit.
+  have : val (tcast T_eq_n empty_op) ==
+         (@val _ _ (tuple_subType n bool) empty_op).
+  - by rewrite val_tcast FT.card_of_T.
   - move => Heq. rewrite -(inj_eq val_inj); exact: Heq.
-Admitted.
+Qed.
 
 Global Instance Rfin'_full:
   refines Rfin' full_op full_op.
 Proof.
   rewrite refinesE; rewrite /Rfin'; apply/eqP.
-  have : val (tcast FT.card_of_T full_op) == val full_op.
-  - move => n. rewrite val_tcast. admit.
+  have : val (tcast T_eq_n full_op) ==
+         (@val _ _ (tuple_subType FT.n bool) full_op).
+  - by rewrite val_tcast FT.card_of_T.
   - move => Heq. rewrite -(inj_eq val_inj); exact: Heq.
-Admitted.
+Qed.
 
 Global Instance Rfin'_compl :
   refines (Rfin' ==> Rfin') compl_op compl_op.
@@ -334,7 +335,6 @@ Admitted.
 Global Instance Rfin'_union:
   refines (Rfin' ==> Rfin' ==> Rfin') union_op union_op.
 Proof.
-  rewrite refinesE => E bs HE E' bs' HE'.
 Admitted.
 
 Global Instance Rfin'_insert:

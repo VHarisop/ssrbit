@@ -330,12 +330,22 @@ Qed.
 Global Instance Rfin'_compl :
   refines (Rfin' ==> Rfin') compl_op compl_op.
 Proof.
-Admitted.
+  rewrite refinesE => bs bs'.
+  move/(congr1 val); rewrite val_tcast /= => H.
+  apply/val_inj; rewrite val_tcast /=.
+  by rewrite H.
+Qed.
 
 Global Instance Rfin'_union:
   refines (Rfin' ==> Rfin' ==> Rfin') union_op union_op.
 Proof.
-Admitted.
+  rewrite refinesE => bs1 bs1'.
+  move/(congr1 val); rewrite val_tcast /= => H1.
+  move => bs2 bs2'. 
+  move/(congr1 val); rewrite val_tcast /= => H2.
+  apply/val_inj; rewrite val_tcast /=.
+  by rewrite H1 H2.
+Qed.
 
 Global Instance Rfin'_insert:
   refines (Rord' ==> Rfin' ==> Rfin') set_op set_op.

@@ -70,65 +70,21 @@ Module Native := MakeOps(Wordsize).
 Definition Rfin: {set T} -> 'B_#|T| -> Type  := fun_hrel (@finB T).
 Definition Rfin' : 'B_#|T| -> 'B_n -> Type := (fun a b => val a =  val b).
 Definition Rtuple : 'B_n -> bitseq -> Type :=  fun a b => tval a = b.
-Definition Rnative: bitseq -> Native.Int -> Type := fun_hrel (bitsFromInt Native.w).
 
 Definition Rbitseq : {set T} -> bitseq -> Type := Rfin \o Rfin' \o Rtuple.
-Definition Rbitset: {set T} -> Native.Int -> Type := Rfin \o (Rfin' \o (Rtuple \o Rnative)).
 
 (** ** From finite type to machine words: *)
 
 Definition Rord: T -> 'I_#| T | -> Type := fun t n => enum_rank t = n.
 Definition Rord': 'I_#| T | -> 'I_n -> Type := fun t t' => val t = val t'.
 Definition RidxI: 'I_n -> nat -> Type := fun k n => val k = n.
-CoInductive RidxN: nat -> Native.Int -> Type :=
-  Ridx_spec (k: nat)(i: Native.Int)(b: bitseq) of
-    Rnative b i
-  & (k <= #| T |)%N
-  & b = bitn #| T | k : RidxN k i.
 
-Definition Rbits: T -> Native.Int -> Type :=
-  Rord \o (Rord' \o (RidxI \o RidxN)).
 Definition Rbitsq: T -> nat -> Type :=
   Rord \o Rord' \o RidxI.
 
 (************************************************************************)
 (** * Notations                                                         *)
 (************************************************************************)
-
-(** ** Notations for native integers *)
-
-Global Instance   eq_N : eq_of   Native.Int := Native.eq.
-Global Instance zero_N : zero_of Native.Int := Native.zero.
-Global Instance  one_N : one_of  Native.Int := Native.one.
-Global Instance   or_N : or_of   Native.Int := Native.lor.
-Global Instance  shl_N : shl_of  Native.Int Native.Int := Native.lsl.
-Global Instance  and_N : and_of  Native.Int := Native.land.
-Global Instance  shr_N : shr_of  Native.Int Native.Int := Native.lsr.
-Global Instance  not_N : not_of  Native.Int := Native.lnot.
-Global Instance  xor_N : xor_of  Native.Int := Native.lxor.
-Global Instance  add_N : add_of  Native.Int := Native.add.
-Global Instance  sub_N : sub_of  Native.Int := Native.sub.
-Global Instance  opp_N : opp_of  Native.Int := Native.opp.
-
-Global Instance get_N       : get_of Native.Int Native.Int       := get.
-Global Instance singleton_N : singleton_of Native.Int Native.Int := singleton (Bits := Native.Int).
-Global Instance compl_N     : compl_of Native.Int                := compl.
-Global Instance empty_N     : empty_of Native.Int                := empty (Bits := Native.Int).
-Global Instance full_N      : full_of Native.Int                 := full  (Bits := Native.Int).
-Global Instance set_N       : set_of Native.Int Native.Int       := insert.
-Global Instance remove_N    : remove_of Native.Int Native.Int    := remove.
-Global Instance inter_N     : inter_of Native.Int                := inter.
-Global Instance union_N     : union_of Native.Int                := union.
-Global Instance symdiff_N   : symdiff_of Native.Int              := symdiff.
-Global Instance subset_N    : subset_of Native.Int               := subset.
-Global Instance cardinal_N  : cardinal_of nat Native.Int.
-Admitted.
-Global Instance keep_min_N  : keep_min_of Native.Int.
-Admitted.
-Global Instance succ_N      : succ_of Native.Int.
-Admitted.
-Global Instance pred_N      : pred_of Native.Int.
-Admitted.
 
 (** ** Notations for bit sequences (of size #| T |) *)
 
@@ -496,11 +452,6 @@ Proof. by rewrite refinesE. Qed.
 Global Instance Rtuple_empty: refines Rtuple empty_op empty_op.
 Proof. by rewrite refinesE. Qed.
 
-Global Instance Rtuple_full: refines Rtuple full_op full_op.
-Proof.
-  rewrite refinesE /Rtuple.
-Admitted.
-
 Global Instance Rtuple_lnot:
   refines (Rtuple ==> Rtuple) ~%C ~%C.
 Proof. by rewrite refinesE=> bs w <-. Qed.
@@ -623,7 +574,9 @@ Proof. param_comp empty_R. Qed.
 Global Instance Rbitseq_full:
   refines Rbitseq full_op full_op.
 Proof.
-  param_comp full_R.
+  do 2 (eapply refines_trans; tc).
+- rewrite refinesE; exact: erefl.
+- param (full_R (Bits_R := Rtuple)).
 Qed.
 
 Global Instance Rbitseq_insert:

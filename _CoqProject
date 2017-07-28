@@ -1,5 +1,4 @@
 -R theories ssrbit
--R extraction ssrbit
 -R refinement ssrbit
 
 theories/bitseq.v
@@ -7,5 +6,4 @@ theories/bitocaml.v
 theories/bitword.v
 theories/bitset.v
 theories/notation.v
-refinement/computable_N.v
 refinement/bits_computable.v

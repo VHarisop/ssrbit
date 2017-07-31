@@ -30,13 +30,11 @@ Eval vm_compute in (fix Ffix (x : nat) : seq bool := match x with
                                          | x0.+1 => false :: Ffix x0
                                          end) 4%N.
 
+Eval vm_compute in (count id [:: true; false; true; true]).
+
 Let p : {set 'I_4} := setU (set1 ord0) (set1 (Ordinal (erefl (1 < 4)%N))).
 Let q : {set 'I_4} := set0.
 Let r : {set 'I_4} := set0.
-
-(* Instance refine_ord0 : refines R.Rbits ord0 R.Native.zero.
-Proof. Admitted. *)
-
 
 Global Instance ord_num (m : 'I_n) :
   refines R.Rbitsq m (m).
@@ -61,4 +59,14 @@ Abort.
 Goal empty_op != p.
 Proof.
   by coqeal.
+Abort.
+
+Goal p != q.
+Proof.
+  by coqeal.
+Abort.
+
+Goal ( cardinal_op p ) = 2.
+Proof.
+  Fail by coqeal.
 Abort.

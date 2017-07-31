@@ -87,6 +87,7 @@ Notation "[ 'SET' x ]"  := (singleton_op x) : computable_scope.
 Notation "\subset%C"     := (subset_op)      : computable_scope.
 Notation "A '\subset' B" := (subset_op A B)  : computable_scope.
 *)
+Notation "#| T |" := (cardinal_op T) : computable_scope.
 
 End Op.
 End Sets.

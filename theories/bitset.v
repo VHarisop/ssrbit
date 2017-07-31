@@ -656,6 +656,7 @@ From CoqEAL Require Import hrel param refinements.
 
 Import Refinements.Op.
 Import Logical.Op.
+Import Sets.Op.
 
 Section Operations.
 
@@ -673,6 +674,7 @@ Context `{and_of Bits}.
 Context `{xor_of Bits}.
 Context `{shl_of Idx Bits}.
 Context `{shr_of Idx Bits}.
+Context `{cardinal_of nat Bits}.
 
 Implicit Types (k: Idx)(bs : Bits).
 Local Open Scope computable_scope.
@@ -688,12 +690,12 @@ Definition inter bs bs' := bs && bs'.
 Definition union bs bs' := bs || bs'.
 Definition keep_min bs  := bs && ~ bs.
 
-
 (* XXX: Order of arguments *)
 Definition insert  k bs    := bs || (1 :<<: k).
 Definition remove  bs k    := bs && (~ (1 :<<: k)).
 Definition symdiff bs1 bs2 := bs1 ^^ bs2.
 Definition subset  bs1 bs2 := (bs1 && bs2) == bs1.
+Definition cardinal bs := #|bs|.
 
 End Operations.
 
@@ -709,6 +711,7 @@ Arguments insert {_}{_}{_}{_}{_} k bs.
 Arguments remove {_}{_}{_}{_}{_}{_} bs k.
 Arguments symdiff {_}{_} bs1 bs2.
 Arguments subset {_}{_}{_} bs1 bs2.
+Arguments cardinal {_} {_} bs.
 
 Parametricity get.
 Parametricity singleton.
@@ -722,6 +725,7 @@ Parametricity insert.
 Parametricity remove.
 Parametricity symdiff.
 Parametricity subset.
+Parametricity cardinal.
 
 (******************************************************************************)
 (* Typeclass notations                                                        *)
@@ -759,7 +763,7 @@ Global Instance symdiff_fin: symdiff_of {set T} := fun E E' => ((E :\: E') :|: (
 Global Instance subset_fin:  subset_of {set T}  := fun E E' => E \subset E'.
 
 Global Instance cardinal_fin:  cardinal_of nat {set T}  := fun E => #| E |.
-Global Instance keep_min_fin:  keep_min_of {set T}  := 
+Global Instance keep_min_fin:  keep_min_of {set T}  :=
   fun E => [set x in E | [forall (y | y \in E), enum_rank x <= enum_rank y]].
 
 End OpFin.
@@ -770,9 +774,9 @@ Section OpOrds.
 
 Variable n: nat.
 
-Global Instance pred_fin:  pred_of {set 'I_n.+1}  := 
+Global Instance pred_fin:  pred_of {set 'I_n.+1}  :=
   fun E => shlS E (inord 1).
-Global Instance succ_fin:  succ_of {set 'I_n.+1}  := 
+Global Instance succ_fin:  succ_of {set 'I_n.+1}  :=
   fun E => shrS E (inord 1).
 
 End OpOrds.
@@ -796,9 +800,7 @@ Global Instance inter_B     : inter_of 'B_n          := inter.
 Global Instance union_B     : union_of 'B_n          := union.
 Global Instance symdiff_B   : symdiff_of 'B_n        := symdiff.
 Global Instance subset_B    : subset_of 'B_n         := subset.
-Global Instance cardinal_B  : cardinal_of nat 'B_n   := 
-  (fun x => nats (cardinal_smart x)).
+Global Instance cardinal_B  : cardinal_of nat 'B_n   := cardinal.
 Global Instance keep_min_B  : keep_min_of 'B_n. Admitted.
-
 
 End OpB.

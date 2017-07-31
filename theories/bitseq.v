@@ -348,6 +348,9 @@ rewrite /setls (fun_if ((nth false)^~j)) nth_set_nth /=.
 by case: eqP => [<-|]; rewrite ?hj ?if_same.
 Qed.
 
+(* Untyped cardinality operator *)
+Definition cards := count id.
+
 (* Properties of bget bset wrt to bit operations *)
 (* Bigops? *)
 
@@ -412,6 +415,9 @@ Implicit Type (t : 'B_k').
 Definition orB  t1 t2 := [bits of ors  t1 t2].
 Definition andB t1 t2 := [bits of ands t1 t2].
 Definition xorB t1 t2 := [bits of xors t1 t2].
+
+(* Typed cardinality operator *)
+Definition cardB := fun (t : 'B_k) => cards t.
 
 Lemma and0B t : andB '0 t = '0.
 Proof.
@@ -1242,81 +1248,6 @@ End Defs.
 
 End Signed.
 
-(*
-
-Definition bitU m1 m2 :=
-  let lm := maxn (size m1) (size m2)    in
-  let p1 := nseq (lm - (size m1)) false in
-  let p2 := nseq (lm - (size m2)) false in
-  let ms := zip  (m1 ++ p1) (m2 ++ p2)  in
-  map (fun b => orb b.1 b.2) ms.
-
-Lemma bitU_cons x y xl yl :
-  bitU (x :: xl) (y :: yl) = [:: x || y & bitU xl yl].
-Proof. by rewrite /bitU maxnSS. Qed.
-
-(*
-Lemma bit0U y yl : bitU [::] (y :: yl) = [:: y & bitU [::] yl].
-Proof. by rewrite /bitU /= subn0 !max0n. Qed.
-
-Lemma bitU0 x xl : bitU (x :: xl) [::] = [:: x & bitU xl [::] ].
-Proof. by rewrite /bitU /= orbF subn0 !maxn0. Qed.
-*)
-(*
-(* Lemma bitU0b y : bitU [::] y = y. *)
-(* Proof. elim: y => //= y yl ihl; rewrite bit0U bitU0 ihl. Qed. *)
-*)
-Lemma bitUA : associative bitU.
-(* Admitted. *)
-
-Lemma bitUC : commutative bitU.
-(* Admitted. *)
-
-(* Oh so we indeed should pad! *)
-Lemma bit0U k : left_id (nseq k false) bitU.
-(* Admitted. *)
-
-Lemma bitU0 k : right_id (nseq k false) bitU.
-(* Admitted. *)
-
-About Monoid.Law.
-Canonical bitU_monoid k := Monoid.Law bitUA (bit0U k) (bitU0 k).
-Canonical bitU_com    k := @Monoid.ComLaw _ _ (bitU_monoid k) bitUC.
-
-(*
-Proof.
-elim=> [|x xl ihx] [|y yl]; rewrite ?bit0U ?bitU0 //.
-+ by rewrite bit0C.
-+ by rewrite bit0C.
-by rewrite !bitU_cons orbC ihx.
-Qed.
-
-About Monoid.Law.
-
-Lemma zip0s T U (s : seq U) : @zip T _ [::] s = [::].
-Proof. by case: s. Qed.
-
-Lemma zips0 T U (s : seq T) : @zip _ U s [::] = [::].
-Proof. by case: s. Qed.
-
-Lemma bitUA : associative bitU.
-Proof.
-elim=> [|x xl ihx] [|y yl] z //=.
-+ rewrite bit0U.
- [|z zl] //=.
-+ by rewrite /bitU zip0s.
-+ by rewrite /bitU !zips0.
-+ by rewrite !bitU_cons orbA ihx.
-Qed.
-
-
-
-Search _ zip.
-
-Definition from_set' k s := \
-*)
-*)
-
 (******************************************************************************)
 (* Typeclass notations                                                        *)
 (******************************************************************************)
@@ -1327,6 +1258,7 @@ Require Import notation.
 
 Import Refinements.Op.
 Import Logical.Op.
+Import Sets.Op.
 
 (* For bit vectors: *)
 
@@ -1343,3 +1275,4 @@ Global Instance zero_B {n} : zero_of 'B_n := '0.
 Global Instance one_B  {n} : one_of  'B_n := inB 1.
 Global Instance sub_B  {n} : sub_of  'B_n  := (@subB _).
 
+Global Instance card_B {n} : cardinal_of nat 'B_n := (@cardB _).

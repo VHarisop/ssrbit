@@ -112,6 +112,7 @@ Global Instance inter_S     : inter_of bitseq            := inter.
 Global Instance union_S     : union_of bitseq            := union.
 Global Instance symdiff_S   : symdiff_of bitseq          := symdiff.
 Global Instance subset_S    : subset_of bitseq           := subset.
+Global Instance card_S      : cardinal_of nat bitseq := cards.
 
 (************************************************************************)
 (** * From finset to bit vectors                                        *)
@@ -241,6 +242,13 @@ apply/setIidPl/eqP; rewrite -Finter_morphL; last by move->.
 by move/(can_inj (@bitFK _)).
 Qed.
 
+Global Instance Rfin_cardinal:
+  refines (Rfin ==> eq) (cardinal_op) cardinal_op.
+Proof.
+  rewrite !refinesE => A1 y1 <-.
+  by rewrite /cardinal_op /cardinal_fin (card_imset _ enum_val_inj) cardbP.
+Qed.
+
 Notation RfinC := (Rfin \o Rcard) (only parsing).
 Notation RordC := (Rord \o Rord') (only parsing).
 
@@ -252,7 +260,6 @@ Proof.
   rewrite /eq_op /eq_B -2?(inj_eq val_inj) //=.
   by rewrite HE HE2.
 Qed.
-
 
 Global Instance Rcard_empty:
   refines Rcard empty_op empty_op.
@@ -334,6 +341,13 @@ Proof.
   by rewrite -?(inj_eq val_inj) /= Ha Hb; apply/eq_bool_R.
 Qed.
 
+Global Instance Rcard_card:
+  refines (Rcard ==> eq) cardinal_op cardinal_op.
+Proof.
+  rewrite refinesE /Rcard => x y /= Rxy.
+  by rewrite /cardinal_op/cardinal_B/cardinal/cardinal_op/card_B/cardB Rxy.
+Qed.
+
 (** Composition lemmas for RfinC *)
 (** ******************************)
 
@@ -385,13 +399,9 @@ Global Instance RfinC_subset:
   refines (RfinC ==> RfinC ==> bool_R) subset_op subset_op.
 Proof. param_comp subset_R. Qed.
 
-(* Definition cardTT (A : {set T}) := #|A|. *)
-(* Global Instance Rfin_cardinal: *)
-(*   refines (Rfin ==> eq) (cardTT) (fun x => nats (cardinal_smart x)). *)
-(* Proof. *)
-(* rewrite !refinesE => A1 y1 <-. *)
-(* by rewrite /cardTT cardinalP (card_imset _ enum_val_inj) cardbP. *)
-(* Qed. *)
+Global Instance RfinC_card:
+  refines (RfinC ==> eq) cardinal_op cardinal_op.
+Proof. param_comp cardinal_R. Qed.
 
 (* XXX: To be moved *)
 Lemma arg_min_enum_rank (aT : finType) (A : {set 'I_#|aT| }) x (h_x : x \in A) :
@@ -486,6 +496,11 @@ rewrite !refinesE => bs w <- .
 by rewrite (opps_relE (k := n)(bv := bs)).
 Qed.
 
+Global Instance Rtuple_card:
+  refines (Rtuple ==> eq) (@cardB _) cards.
+Proof.
+  rewrite !refinesE => bs w <-; by rewrite /cardB.
+Qed.
 
 (************************************************************************)
 (** * From bit words to bit tuples 'W_n -> 'B_n                         *)
@@ -609,5 +624,9 @@ Proof. param_comp symdiff_R. Qed.
 Global Instance Rbitseq_subset:
   refines (Rbitseq ==> Rbitseq ==> bool_R) subset_op subset_op.
 Proof. param_comp subset_R. Qed.
+
+Global Instance Rbitseq_card:
+  refines (Rbitseq ==> eq) cardinal_op cardinal_op.
+Proof. param_comp cardinal_R. Qed.
 
 End Make.

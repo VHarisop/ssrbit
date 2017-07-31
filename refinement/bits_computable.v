@@ -653,17 +653,38 @@ Proof.
   by rewrite /belast /= -/belast Hind.
 Qed.
 
+Lemma bitseq_size_proof : size (false :: '0_n) = n.+1.
+Proof.
+  rewrite /=; suff -> : forall b k, size (nseq k b) = k by done.
+  move => ? ?; elim => // n Hind. by rewrite /size //= -/size Hind.
+Qed.
+
+Lemma unzip_tuple :
+  forall n, unzip1 (Tuple (size_zip_proof (false :: '0_n) (true :: '0_n))) =
+  false :: '0_n.
+Proof. case => [// | n ]; by rewrite unzip1_zip. Qed.
+
 Lemma subs_nseq_true {n} : subs '0_n (bitn n 1) = nseq n true.
 Proof.
   rewrite bitn_one_def //=. elim H : n => [// | n Hind] //=.
   rewrite belast_nseq_false -Hind.
-  have Hfst : forall k,
-    (tval (lift_top (false :: '0_k) (true :: '0_k)).1 = false :: '0_k).
-  - elim => [// | k HindK]; by rewrite /lift_top //= HindK.
-  have Hsnd : forall k,
-    (tval (lift_top (false :: '0_k) (true :: '0_k)).2 = true :: '0_k).
-  - move => k. rewrite /lift_top /=; by rewrite unzip2_zip.
-  (* TODO: Maybe prove Hfst, Hsnd immediately for tuples *)
+  (* TODO: Maybe prove Hfst, Hsnd directly for tuples *)
+  set p := (size '0_n); rewrite /subs /val /=.
+  have -> : unzip1 (zip '0_n (belast true '0_n)) = '0_n.
+  - rewrite unzip1_zip; first by done. by rewrite size_belast.
+  rewrite unzip1_zip; last by done.
+  have -> : size (belast true '0_n) = p by rewrite size_belast.
+  rewrite !minnn !nats_cons.
+  have nats0 : forall k, nats '0_k = 0.
+  - elim => [// | k HindK] /=. by rewrite nats_cons HindK.
+  rewrite nats0 //= double0 addn0 !unzip2_zip; last first.
+  + by [].
+  + by rewrite size_belast.
+  rewrite nats0 double0 addn0 -/bitn_rec !add0n -/p.
+  have -> : nats (belast true '0_n) = 1.
+  - admit.
+  suff Hsimpl : forall m, (2^m).-1.+1 = 2^m.
+  rewrite !Hsimpl.
 Admitted.
 
 Global Instance fullCard :

@@ -24,17 +24,14 @@ End Fintype.
 
 Module R  := Make(Fintype).
 
-Eval vm_compute in R.one_S.
-Eval vm_compute in (fix Ffix (x : nat) : seq bool := match x with
-                                         | 0 => [::]
-                                         | x0.+1 => false :: Ffix x0
-                                         end) 4%N.
+Eval vm_compute in R.zero_S.
 
 Eval vm_compute in (count id [:: true; false; true; true]).
 
 Let p : {set 'I_4} := setU (set1 ord0) (set1 (Ordinal (erefl (1 < 4)%N))).
 Let q : {set 'I_4} := set0.
 Let r : {set 'I_4} := set0.
+Let s : {set 'I_4} := set1 ord0.
 
 Global Instance ord_num (m : 'I_n) :
   refines R.Rbitsq m (m).
@@ -66,7 +63,58 @@ Proof.
   by coqeal.
 Abort.
 
-Goal ( cardinal_op p ) = 2.
+(* Strangely enough, this is needed for the cardinality comparisons
+   below to work properly *)
+Instance EqRefine :
+  refines (eq ==> eq ==> bool_R)%rel eqtype.eq_op eqn.
+Proof.
+  rewrite !refinesE eqnE => x1 y1 <- x2 y2 <-; by case (x1 == x2).
+Qed.
+
+Instance fullCard :
+  refines eq (cardinal_op full_op) n.
+Proof.
+  by rewrite refinesE.
+Qed.
+
+Instance emptyCard :
+  refines eq (cardinal_op empty_op) 0.
+Proof.
+  by rewrite !refinesE /=.
+Qed.
+
+Goal (cardinal_op p) != (cardinal_op r).
+Proof.
+  by coqeal.
+Abort.
+
+Goal (cardinal_op q) == (cardinal_op r).
+Proof.
+  by coqeal.
+Abort.
+
+Goal full_op != p.
+Proof.
+  by coqeal.
+Abort.
+
+Goal (cardinal_op full_op) != (cardinal_op r).
+Proof.
+  by coqeal.
+Abort.
+
+Goal (cardinal_op full_op) != 2.
+Proof.
+  by coqeal.
+Abort.
+
+Goal cardinal_op q == 0.
+Proof.
+  by coqeal.
+Abort.
+
+(* This case is still problematic *)
+Goal cardinal_op s == 1.
 Proof.
   Fail by coqeal.
 Abort.

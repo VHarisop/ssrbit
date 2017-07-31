@@ -207,7 +207,6 @@ rewrite modn_small; last first.
   rewrite addn0 -ltn_subRL addnBA; last by rewrite ltnW.
   by rewrite add1n prednK ?expn_gt0.
 congr bitn.
-Search _ nats.
 have U s: 1 + nats (negs s) = 2^(size s) - nats s.
   elim: s => [|b s ihs].
     by rewrite /= (nats_zero 0) expn0.

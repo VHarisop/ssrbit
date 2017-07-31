@@ -37,7 +37,6 @@ Let r : {set 'I_4} := set0.
 (* Instance refine_ord0 : refines R.Rbits ord0 R.Native.zero.
 Proof. Admitted. *)
 
-Require Import NArith.
 
 Global Instance ord_num (m : 'I_n) :
   refines R.Rbitsq m (m).
@@ -54,7 +53,12 @@ Qed.
 
 Set Typeclasses Debug.
 
-Goal q != p.
+Goal (set1 (Ordinal (erefl (2 < 4)%N)) :|: q) != empty_op.
+Proof.
+  by coqeal.
+Abort.
+
+Goal empty_op != p.
 Proof.
   by coqeal.
 Abort.

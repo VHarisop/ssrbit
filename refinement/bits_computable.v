@@ -5,7 +5,7 @@ Require Import choice fintype finset tuple finfun.
 From CoqEAL
 Require Import hrel param refinements.
 
-Require Import bitseq bitword notation computable_N.
+Require Import bitseq bitword notation.
 
 Import Refinements.Op.
 Import Logical.Op.
@@ -40,7 +40,7 @@ Unset Printing Implicit Defensive.
 (************************************************************************)
 
 (* Sets and efficient bit operators *)
-Require Import bitocaml bitset.
+Require Import bitset.
 
 Module Type FINTYPE.
   Parameter T: finType.
@@ -63,15 +63,13 @@ Module Wordsize.
   Definition wordsize := n.
 End Wordsize.
 
-Module Native := MakeOps(Wordsize).
-
 (** ** From sets over a finite type to machine words: *)
 
 Definition Rfin: {set T} -> 'B_#|T| -> Type  := fun_hrel (@finB T).
-Definition Rfin' : 'B_#|T| -> 'B_n -> Type := (fun a b => val a =  val b).
+Definition Rcard : 'B_#|T| -> 'B_n -> Type := (fun a b => val a =  val b).
 Definition Rtuple : 'B_n -> bitseq -> Type :=  fun a b => tval a = b.
 
-Definition Rbitseq : {set T} -> bitseq -> Type := Rfin \o Rfin' \o Rtuple.
+Definition Rbitseq : {set T} -> bitseq -> Type := Rfin \o Rcard \o Rtuple.
 
 (** ** From finite type to machine words: *)
 
@@ -243,104 +241,95 @@ apply/setIidPl/eqP; rewrite -Finter_morphL; last by move->.
 by move/(can_inj (@bitFK _)).
 Qed.
 
-(** Rfin' lemmas *)
-(*Lemma Rfin'_implies_eq : forall a b, Rfin' a b -> (tval a = b).
-Proof.
-  move => a b. by rewrite /Rfin'.
-Qed.*)
-
-Notation RfinC := (Rfin \o Rfin') (only parsing).
+Notation RfinC := (Rfin \o Rcard) (only parsing).
 Notation RordC := (Rord \o Rord') (only parsing).
 
-(* Lemma tcast_injective : injective (tcast (T := bool) T_eq_n).
-Proof. exact: can_inj (tcastK T_eq_n). Qed. *)
-
-Global Instance Rfin'_eq:
-  refines (Rfin' ==> Rfin' ==> param.bool_R) eq_op eq_op.
+Global Instance Rcard_eq:
+  refines (Rcard ==> Rcard ==> param.bool_R) eq_op eq_op.
 Proof.
-  rewrite refinesE => E bs; rewrite /Rfin' => /= HE.
-  rewrite /Rfin' => E2 bs2 /= HE2. apply/eq_bool_R.
+  rewrite refinesE => E bs; rewrite /Rcard => /= HE.
+  rewrite /Rcard => E2 bs2 /= HE2. apply/eq_bool_R.
   rewrite /eq_op /eq_B -2?(inj_eq val_inj) //=.
   by rewrite HE HE2.
 Qed.
 
 
-Global Instance Rfin'_empty:
-  refines Rfin' empty_op empty_op.
+Global Instance Rcard_empty:
+  refines Rcard empty_op empty_op.
 Proof.
-  rewrite refinesE; rewrite /Rfin'; apply/eqP; rewrite //=.
+  rewrite refinesE; rewrite /Rcard; apply/eqP; rewrite //=.
   by rewrite T_eq_n.
 Qed.
 
-Global Instance Rfin'_full:
-  refines Rfin' full_op full_op.
+Global Instance Rcard_full:
+  refines Rcard full_op full_op.
 Proof.
-  rewrite refinesE; rewrite /Rfin'; apply/eqP; rewrite //=.
+  rewrite refinesE; rewrite /Rcard; apply/eqP; rewrite //=.
   by rewrite T_eq_n.
 Qed.
 
-Global Instance Rfin'_compl :
-  refines (Rfin' ==> Rfin') compl_op compl_op.
+Global Instance Rcard_compl :
+  refines (Rcard ==> Rcard) compl_op compl_op.
 Proof.
-  by rewrite refinesE => bs bs'; rewrite /Rfin' => /= ->.
+  by rewrite refinesE => bs bs'; rewrite /Rcard => /= ->.
 Qed.
 
-Global Instance Rfin'_union:
-  refines (Rfin' ==> Rfin' ==> Rfin') union_op union_op.
+Global Instance Rcard_union:
+  refines (Rcard ==> Rcard ==> Rcard) union_op union_op.
 Proof.
-  rewrite refinesE => b b'; rewrite /Rfin' => /= Hb.
-  move => c c'; rewrite /Rfin' => /= Hc.
+  rewrite refinesE => b b'; rewrite /Rcard => /= Hb.
+  move => c c'; rewrite /Rcard => /= Hc.
   by rewrite Hb Hc.
 Qed.
 
-Global Instance Rfin'_insert:
-  refines (Rord' ==> Rfin' ==> Rfin') set_op set_op.
+Global Instance Rcard_insert:
+  refines (Rord' ==> Rcard ==> Rcard) set_op set_op.
 Proof.
-  rewrite refinesE => v v'; rewrite /Rfin' /Rord' => /= H.
+  rewrite refinesE => v v'; rewrite /Rcard /Rord' => /= H.
   by move => a a' /= ->; rewrite H; rewrite T_eq_n.
 Qed.
 
-Global Instance Rfin'_remove:
-  refines (Rfin' ==> Rord' ==> Rfin') remove_op remove_op.
+Global Instance Rcard_remove:
+  refines (Rcard ==> Rord' ==> Rcard) remove_op remove_op.
 Proof.
-  rewrite refinesE /Rfin' /Rord' => a a' /= Ha. move => v v' /= Hv.
+  rewrite refinesE /Rcard /Rord' => a a' /= Ha. move => v v' /= Hv.
   by rewrite Ha Hv T_eq_n.
 Qed.
 
-Global Instance Rfin'_get:
-  refines (Rord' ==> Rfin' ==> param.bool_R) get_op get_op.
+Global Instance Rcard_get:
+  refines (Rord' ==> Rcard ==> param.bool_R) get_op get_op.
 Proof.
-  rewrite refinesE /Rord' /Rfin'.
+  rewrite refinesE /Rord' /Rcard.
   move => t t' /= Ht a a' /= Ha.
   rewrite /= /get_op /get_B /get. runfold. rewrite /andB /shlB /=.
   apply/eq_bool_R. by rewrite -2?(inj_eq val_inj) /= Ht Ha T_eq_n.
 Qed.
 
-Global Instance Rfin'_singleton:
-    refines (Rord' ==> Rfin') singleton_op singleton_op.
+Global Instance Rcard_singleton:
+    refines (Rord' ==> Rcard) singleton_op singleton_op.
 Proof.
-  rewrite refinesE /Rord' /Rfin'.
+  rewrite refinesE /Rord' /Rcard.
   move => t t' /= <-. by rewrite [X in bitn X 1]T_eq_n.
 Qed.
 
-Global Instance Rfin'_inter:
-  refines (Rfin' ==> Rfin' ==> Rfin') inter_op inter_op.
+Global Instance Rcard_inter:
+  refines (Rcard ==> Rcard ==> Rcard) inter_op inter_op.
 Proof.
-  rewrite refinesE /Rfin' => a a' /= Ha b b' /= Hb.
+  rewrite refinesE /Rcard => a a' /= Ha b b' /= Hb.
   by rewrite Ha Hb.
 Qed.
 
-Global Instance Rfin'_symdiff:
-  refines (Rfin' ==> Rfin' ==> Rfin') symdiff_op symdiff_op.
+Global Instance Rcard_symdiff:
+  refines (Rcard ==> Rcard ==> Rcard) symdiff_op symdiff_op.
 Proof.
-  rewrite refinesE /Rfin' => a a' /= Ha b b' /= Hb.
+  rewrite refinesE /Rcard => a a' /= Ha b b' /= Hb.
   by rewrite Ha Hb.
 Qed.
 
-Global Instance Rfin'_subset:
-  refines (Rfin' ==> Rfin' ==> param.bool_R) subset_op subset_op.
+Global Instance Rcard_subset:
+  refines (Rcard ==> Rcard ==> param.bool_R) subset_op subset_op.
 Proof.
-  rewrite refinesE /Rfin' => a a' /= Ha b b' /= Hb.
+  rewrite refinesE /Rcard => a a' /= Ha b b' /= Hb.
   rewrite /= /subset_op /subset_B /subset. runfold. rewrite /andB /=.
   by rewrite -?(inj_eq val_inj) /= Ha Hb; apply/eq_bool_R.
 Qed.

@@ -664,28 +664,83 @@ Lemma unzip_tuple :
   false :: '0_n.
 Proof. case => [// | n ]; by rewrite unzip1_zip. Qed.
 
+Lemma belast_nonnil {n} :
+  n > 0 -> forall b, belast b (nseq n false) = b :: (nseq (n.-1) false).
+Proof.
+  elim: n => [// | n Hind n_gt0 b] //=; by rewrite belast_nseq_false.
+Qed.
+
+Lemma exp_offset {k} : 2 ^ k - 1 < 2 ^ k.
+Proof.
+  rewrite -{2}[2^k]subn0; apply: ltn_sub2l; [ exact: expn_gt0 | done ].
+Qed.
+
+Lemma exp_offset_mod {k} : 2 ^ k.+1 - 1 %% 2 ^ k.+1 = 2 ^ k.+1 - 1.
+Proof.
+  rewrite modn_small //; exact: expnS_ge2.
+Qed.
+
+Lemma exp_offset_odd {k} : k > 0 -> odd (2 ^ k - 1).
+Proof.
+  have lt01 : 0 < 1 by rewrite /=. move => k_gt_0.
+  rewrite odd_sub /=; last by exact: expn_gt0.
+  rewrite odd_exp //=. suff -> : (k == 0) = false by [].
+  by rewrite eqn0Ngt k_gt_0.
+Qed.
+
+Lemma pow2_div2 {k} : (2 ^ k.+1 - 1) %/ 2 = 2 ^ k - 1.
+Proof.
+Admitted.
+
 Lemma subs_nseq_true {n} : subs '0_n (bitn n 1) = nseq n true.
 Proof.
-  rewrite bitn_one_def //=. elim H : n => [// | n Hind] //=.
-  rewrite belast_nseq_false -Hind.
+  rewrite bitn_one_def //=. elim: n => [// | n Hind] //=.
+  rewrite belast_nseq_false -Hind /= /subs /val /=.
   (* TODO: Maybe prove Hfst, Hsnd directly for tuples *)
-  set p := (size '0_n); rewrite /subs /val /=.
   have -> : unzip1 (zip '0_n (belast true '0_n)) = '0_n.
   - rewrite unzip1_zip; first by done. by rewrite size_belast.
   rewrite unzip1_zip; last by done.
-  have -> : size (belast true '0_n) = p by rewrite size_belast.
+  have -> : size (belast true '0_n) = (size '0_n) by rewrite size_belast.
   rewrite !minnn !nats_cons.
   have nats0 : forall k, nats '0_k = 0.
   - elim => [// | k HindK] /=. by rewrite nats_cons HindK.
   rewrite nats0 //= double0 addn0 !unzip2_zip; last first.
   + by [].
   + by rewrite size_belast.
-  rewrite nats0 double0 addn0 -/bitn_rec !add0n -/p.
-  have -> : nats (belast true '0_n) = 1.
-  - admit.
-  suff Hsimpl : forall m, (2^m).-1.+1 = 2^m.
-  rewrite !Hsimpl.
-Admitted.
+  rewrite nats0 double0 addn0 -/bitn_rec !add0n.
+  have Hsimpl : forall m, (2^m).-1.+1 = 2^m.
+  - move => m; by rewrite prednK // expn_gt0 /=.
+  rewrite !Hsimpl odd_mod; last by rewrite odd_exp.
+  have Hodd_sub : odd (2 ^ (size '0_n).+1 - 1) by exact: exp_offset_odd.
+  rewrite Hodd_sub -/bitn //=.
+  case/boolP: (n == 0).
+  - move/eqP => ->; rewrite bitn_nil /=. have -> : nats [::] = 0 by rewrite /=.
+    rewrite double0 addn0 expn1 modn_small; last by done. by rewrite //=.
+  - rewrite -lt0n => n_gt0.
+    rewrite belast_nonnil // nats_cons nats_zero double0 addn0 /=.
+    have -> : ((2 ^ (size '0_n).+1 - 1) %% 2 ^ (size '0_n).+1) =
+      2 ^ (size '0_n).+1 - 1.
+    + rewrite modn_small //; exact: exp_offset.
+    have -> : (2 ^ size '0_n - 1) %% 2 ^ size '0_n = 2 ^ size '0_n - 1.
+    + rewrite modn_small //; exact: exp_offset.
+    rewrite [nats _ %% 2 ^ size '0_n]modn_small; last first.
+    + rewrite bitnK; exact: exp_offset.
+    rewrite [in RHS]bitnK; last first. rewrite inE; exact: exp_offset.
+    rewrite bitnK; last first.
+    + rewrite inE -divn2 ltn_divLR //= -expnSr; exact: exp_offset.
+    rewrite -divn2 -muln2 modn_small.
+    + rewrite {1}/bitn /= muln2 uphalf_double -muln2 {1}/divn //=.
+      rewrite odd_mul /= andbF /=. apply/eqP; rewrite eqseq_cons /= -/bitn.
+      by rewrite pow2_div2.
+    + rewrite pow2_div2 mulnBl mul1n -expnSr.
+      have Hleq1 : (2 ^ (size '0_n).+1 - 2) < (2 ^ (size '0_n).+1 - 1).
+      by rewrite ltn_sub2l //= expnS_ge2.
+      have Hleq2 : 1 + (2 ^ (size '0_n).+1 - 2) < 1 + (2 ^ (size '0_n).+1 - 1).
+      by rewrite ltn_add2l; exact: Hleq1.
+      have Heq : 1 + (2 ^ (size '0_n).+1 - 1) = 2 ^ (size '0_n).+1.
+      rewrite addnC subnK //=; exact: expn_gt0.
+      rewrite -[X in _ < X]Heq; exact: Hleq2.
+Qed.
 
 Global Instance fullCard :
   refines eq (cardinal_op full_op) n.

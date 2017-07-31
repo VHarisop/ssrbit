@@ -690,7 +690,13 @@ Qed.
 
 Lemma pow2_div2 {k} : (2 ^ k.+1 - 1) %/ 2 = 2 ^ k - 1.
 Proof.
-Admitted.
+  have Hform : forall k, 2 * 2^k.+1 = 2^k.+1 + 2^k.+1.
+  - move => k0; by rewrite addnn -muln2 mulnC expnS.
+  elim: k => //= k Hind; rewrite expnS Hform -addnBA; last by exact: expn_gt0.
+  have Hmul : 2^k.+1 = 2 * 2^k by rewrite expnS.
+  rewrite {1}Hmul mulnC divnMDl // Hind addnBA; last by exact: expn_gt0.
+  by rewrite addnn -muln2 mulnC expnS.
+Qed.
 
 Lemma subs_nseq_true {n} : subs '0_n (bitn n 1) = nseq n true.
 Proof.

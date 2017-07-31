@@ -15,9 +15,9 @@ Let n := 4%N.
 
 Definition T := [finType of 'I_n].
 
-Module Fintype : FINTYPE with Definition n := 4 with Definition T := T.
+Module Fintype : FINTYPE with Definition n := n with Definition T := T.
   Definition T := T.
-  Definition n := 4.
+  Definition n := n.
   Lemma card_of_T : #|T| = n.
   Proof. by rewrite card_ord. Qed.
 End Fintype.
@@ -63,24 +63,23 @@ Proof.
   by coqeal.
 Abort.
 
-(* Strangely enough, this is needed for the cardinality comparisons
-   below to work properly *)
-Instance EqRefine :
-  refines (eq ==> eq ==> bool_R)%rel eqtype.eq_op eqn.
-Proof.
-  rewrite !refinesE eqnE => x1 y1 <- x2 y2 <-; by case (x1 == x2).
-Qed.
-
 Instance fullCard :
   refines eq (cardinal_op full_op) n.
 Proof.
+  rewrite /R.card_S/cards/R.full_S/R.sub_S/R.zero_S/R.one_S.
   by rewrite refinesE.
 Qed.
 
-Instance emptyCard :
-  refines eq (cardinal_op empty_op) 0.
+Instance card_num :
+  refines (R.Rbitseq ==> nat_R)%rel cardinal_op cardinal_op.
 Proof.
-  by rewrite !refinesE /=.
+  eapply refines_trans; tc.
+  rewrite refinesE => ? ? /= <-; exact: nat_Rxx.
+Qed.
+
+Instance eq_succn: refines (eq ==> eq)%rel succn succn.
+Proof.
+  by rewrite refinesE => x y ->.
 Qed.
 
 Goal (cardinal_op p) != (cardinal_op r).
@@ -98,7 +97,7 @@ Proof.
   by coqeal.
 Abort.
 
-Goal (cardinal_op full_op) != (cardinal_op r).
+Goal (cardinal_op full_op) != (cardinal_op p).
 Proof.
   by coqeal.
 Abort.
@@ -113,8 +112,7 @@ Proof.
   by coqeal.
 Abort.
 
-(* This case is still problematic *)
-Goal cardinal_op s == 1.
+Goal #|p|%C == 2.
 Proof.
-  Fail by coqeal.
+  by coqeal.
 Abort.

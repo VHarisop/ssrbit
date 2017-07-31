@@ -629,4 +629,51 @@ Global Instance Rbitseq_card:
   refines (Rbitseq ==> eq) cardinal_op cardinal_op.
 Proof. param_comp cardinal_R. Qed.
 
+(** Refinements especially involving cardinal *)
+
+(* Strangely enough, this instance is necessary for cardinal comparison
+   to work properly *)
+Global Instance eqnRefine:
+  refines (eq ==> eq ==> bool_R) eqtype.eq_op eqn.
+Proof.
+  rewrite eqnE refinesE => _ x -> _ y ->; by case: (x == y).
+Qed.
+
+Global Instance emptyCard :
+  refines eq (cardinal_op empty_op) 0%N.
+Proof.
+  have Hempty : forall k, count id (nseq k false) = 0 by elim.
+  rewrite /cardinal_op/card_S/cards/empty_op/empty_S/empty/zero_op/zero_S.
+  by rewrite refinesE Hempty.
+Qed.
+
+Lemma belast_nseq_false : forall k, belast false (nseq k false) = nseq k false.
+Proof.
+  elim => [//= | n Hind].
+  by rewrite /belast /= -/belast Hind.
+Qed.
+
+Lemma subs_nseq_true {n} : subs '0_n (bitn n 1) = nseq n true.
+Proof.
+  rewrite bitn_one_def //=. elim H : n => [// | n Hind] //=.
+  rewrite belast_nseq_false -Hind.
+  have Hfst : forall k,
+    (tval (lift_top (false :: '0_k) (true :: '0_k)).1 = false :: '0_k).
+  - elim => [// | k HindK]; by rewrite /lift_top //= HindK.
+  have Hsnd : forall k,
+    (tval (lift_top (false :: '0_k) (true :: '0_k)).2 = true :: '0_k).
+  - move => k. rewrite /lift_top /=; by rewrite unzip2_zip.
+  (* TODO: Maybe prove Hfst, Hsnd immediately for tuples *)
+Admitted.
+
+Global Instance fullCard :
+  refines eq (cardinal_op full_op) n.
+Proof.
+  have Hfull : forall k, count id (nseq k true) = k.
+  - by elim => [// | k /= ->]; rewrite addnC addn1.
+  rewrite refinesE /full_op/full_S/full; runfold.
+  rewrite /sub_S/zero_S/one_S subs_nseq_true.
+  by rewrite /cardinal_op/card_S/cards Hfull.
+Qed.
+
 End Make.

@@ -653,17 +653,6 @@ Proof.
   by rewrite /belast /= -/belast Hind.
 Qed.
 
-Lemma bitseq_size_proof : size (false :: '0_n) = n.+1.
-Proof.
-  rewrite /=; suff -> : forall b k, size (nseq k b) = k by done.
-  move => ? ?; elim => // n Hind. by rewrite /size //= -/size Hind.
-Qed.
-
-Lemma unzip_tuple :
-  forall n, unzip1 (Tuple (size_zip_proof (false :: '0_n) (true :: '0_n))) =
-  false :: '0_n.
-Proof. case => [// | n ]; by rewrite unzip1_zip. Qed.
-
 Lemma belast_nonnil {n} :
   n > 0 -> forall b, belast b (nseq n false) = b :: (nseq (n.-1) false).
 Proof.
@@ -673,11 +662,6 @@ Qed.
 Lemma exp_offset {k} : 2 ^ k - 1 < 2 ^ k.
 Proof.
   rewrite -{2}[2^k]subn0; apply: ltn_sub2l; [ exact: expn_gt0 | done ].
-Qed.
-
-Lemma exp_offset_mod {k} : 2 ^ k.+1 - 1 %% 2 ^ k.+1 = 2 ^ k.+1 - 1.
-Proof.
-  rewrite modn_small //; exact: expnS_ge2.
 Qed.
 
 Lemma exp_offset_odd {k} : k > 0 -> odd (2 ^ k - 1).
@@ -701,27 +685,20 @@ Qed.
 Lemma subs_nseq_true {n} : subs '0_n (bitn n 1) = nseq n true.
 Proof.
   rewrite bitn_one_def //=. elim: n => [// | n Hind] //=.
-  rewrite belast_nseq_false -Hind /= /subs /val /=.
-  (* TODO: Maybe prove Hfst, Hsnd directly for tuples *)
+  rewrite belast_nseq_false -Hind {Hind} /= /subs /val /=.
   have -> : unzip1 (zip '0_n (belast true '0_n)) = '0_n.
-  - rewrite unzip1_zip; first by done. by rewrite size_belast.
-  rewrite unzip1_zip; last by done.
-  have -> : size (belast true '0_n) = (size '0_n) by rewrite size_belast.
-  rewrite !minnn !nats_cons.
-  have nats0 : forall k, nats '0_k = 0.
-  - elim => [// | k HindK] /=. by rewrite nats_cons HindK.
-  rewrite nats0 //= double0 addn0 !unzip2_zip; last first.
-  + by [].
-  + by rewrite size_belast.
+  - by rewrite unzip1_zip //= size_belast.
+  rewrite unzip1_zip // !size_belast !minnn !nats_cons.
+  have nats0 : forall k, nats '0_k = 0
+    by elim => [// | ? Hi]; rewrite //= nats_cons Hi.
+  rewrite nats0 //= double0 addn0 !unzip2_zip //=; last by rewrite size_belast.
   rewrite nats0 double0 addn0 -/bitn_rec !add0n.
-  have Hsimpl : forall m, (2^m).-1.+1 = 2^m.
+  have Hsimpl : forall m, (2 ^ m).-1.+1 = 2^m.
   - move => m; by rewrite prednK // expn_gt0 /=.
-  rewrite !Hsimpl odd_mod; last by rewrite odd_exp.
-  have Hodd_sub : odd (2 ^ (size '0_n).+1 - 1) by exact: exp_offset_odd.
-  rewrite Hodd_sub -/bitn //=.
-  case/boolP: (n == 0).
-  - move/eqP => ->; rewrite bitn_nil /=. have -> : nats [::] = 0 by rewrite /=.
-    rewrite double0 addn0 expn1 modn_small; last by done. by rewrite //=.
+  rewrite !Hsimpl {Hsimpl} odd_mod; last by rewrite odd_exp.
+  have -> : odd (2 ^ (size '0_n).+1 - 1) by exact: exp_offset_odd.
+  rewrite -/bitn //=; case/boolP: (n == 0).
+  - move/eqP => ->; by rewrite bitn_nil //=.
   - rewrite -lt0n => n_gt0.
     rewrite belast_nonnil // nats_cons nats_zero double0 addn0 /=.
     have -> : ((2 ^ (size '0_n).+1 - 1) %% 2 ^ (size '0_n).+1) =
@@ -729,16 +706,15 @@ Proof.
     + rewrite modn_small //; exact: exp_offset.
     have -> : (2 ^ size '0_n - 1) %% 2 ^ size '0_n = 2 ^ size '0_n - 1.
     + rewrite modn_small //; exact: exp_offset.
-    rewrite [nats _ %% 2 ^ size '0_n]modn_small; last first.
+    rewrite [_ %% 2 ^ size '0_n]modn_small; last first.
     + rewrite bitnK; exact: exp_offset.
-    rewrite [in RHS]bitnK; last first. rewrite inE; exact: exp_offset.
+    rewrite [in RHS]bitnK; last by rewrite inE; exact: exp_offset.
     rewrite bitnK; last first.
     + rewrite inE -divn2 ltn_divLR //= -expnSr; exact: exp_offset.
-    rewrite -divn2 -muln2 modn_small.
-    + rewrite {1}/bitn /= muln2 uphalf_double -muln2 {1}/divn //=.
-      rewrite odd_mul /= andbF /=. apply/eqP; rewrite eqseq_cons /= -/bitn.
-      by rewrite pow2_div2.
-    + rewrite pow2_div2 mulnBl mul1n -expnSr.
+    rewrite -divn2 -muln2 modn_small pow2_div2.
+    + rewrite {1}/bitn /= muln2 uphalf_double -muln2 //=.
+      rewrite odd_mul /= andbF /=. apply/eqP; by rewrite eqseq_cons /=.
+    + rewrite mulnBl mul1n -expnSr.
       have Hleq1 : (2 ^ (size '0_n).+1 - 2) < (2 ^ (size '0_n).+1 - 1).
       by rewrite ltn_sub2l //= expnS_ge2.
       have Hleq2 : 1 + (2 ^ (size '0_n).+1 - 2) < 1 + (2 ^ (size '0_n).+1 - 1).

@@ -63,20 +63,6 @@ Proof.
   by coqeal.
 Abort.
 
-Instance fullCard :
-  refines eq (cardinal_op full_op) n.
-Proof.
-  rewrite /R.card_S/cards/R.full_S/R.sub_S/R.zero_S/R.one_S.
-  by rewrite refinesE.
-Qed.
-
-Instance card_num :
-  refines (R.Rbitseq ==> nat_R)%rel cardinal_op cardinal_op.
-Proof.
-  eapply refines_trans; tc.
-  rewrite refinesE => ? ? /= <-; exact: nat_Rxx.
-Qed.
-
 Instance eq_succn: refines (eq ==> eq)%rel succn succn.
 Proof.
   by rewrite refinesE => x y ->.
@@ -92,6 +78,11 @@ Proof.
   by coqeal.
 Abort.
 
+Goal #|empty_op|%C == 0.
+Proof.
+  by coqeal.
+Abort.
+
 Goal full_op != p.
 Proof.
   by coqeal.
@@ -102,7 +93,7 @@ Proof.
   by coqeal.
 Abort.
 
-Goal (cardinal_op full_op) != 2.
+Goal (cardinal_op full_op) == 4.
 Proof.
   by coqeal.
 Abort.

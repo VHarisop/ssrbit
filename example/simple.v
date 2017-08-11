@@ -107,3 +107,18 @@ Goal #|p|%C == 2.
 Proof.
   by coqeal.
 Abort.
+
+Goal ~:q == full_op.
+Proof.
+  by coqeal.
+Abort.
+
+Goal symdiff_op p q == p.
+Proof.
+  by coqeal.
+Abort.
+
+Goal p :&: q == q.
+Proof.
+  by coqeal.
+Abort.

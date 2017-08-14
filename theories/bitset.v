@@ -252,6 +252,15 @@ rewrite !mem_setb 2!inE !mem_setb inE !mem_setb nth_liftz ?size_tuple //.
 case: b1`_i b2`_i=> -[] // .
 Qed.
 
+Lemma diff_morphL k (b1 b2 : 'B_k) :
+  setB (andB b1 (xorB b1 b2)) = (setB b1 :\: setB b2).
+Proof.
+  apply/setP => i.
+  rewrite !mem_setb inE !mem_setb nth_liftz ?size_tuple //.
+  case b1_true: b1`_i => [] //; last by rewrite andFb andbF.
+  rewrite nth_liftz ?size_tuple // andTb andbT /xorb b1_true //=.
+Qed.
+
 (* More properties: singleton *)
 (* XXX: This should be one liner as you can see with the mismatches *)
 Lemma setB1 k (n : 'I_k.+1) :
@@ -622,6 +631,14 @@ rewrite !setDE /finB symdiff_morphL imsetU !setDE !imsetI.
 - move=> x y _ _; apply: enum_val_inj.
 Qed.
 
+Lemma Fdiff_morphL (b1 b2 : 'B_#|T|) :
+  finB (andB b1 (xorB b1 b2)) = (finB b1 :\: finB b2).
+Proof.
+  rewrite !setDE /finB diff_morphL !setDE !imsetI.
+  - by rewrite !setDB.
+  - by move => ? ? _ _; apply: enum_val_inj.
+Qed.
+
 End FinSet.
 
 (******************************************************************************)
@@ -670,8 +687,8 @@ Context `{one_of  Bits}.
 
 Context `{not_of Bits}.
 Context `{or_of  Bits}.
-Context `{and_of Bits}.
-Context `{xor_of Bits}.
+Context `{Hand: and_of Bits}.
+Context `{Hxor: xor_of Bits}.
 Context `{shl_of Idx Bits}.
 Context `{shr_of Idx Bits}.
 Context `{cardinal_of nat Bits}.
@@ -695,6 +712,7 @@ Definition insert  k bs    := bs || (1 :<<: k).
 Definition remove  bs k    := bs && (~ (1 :<<: k)).
 Definition symdiff bs1 bs2 := bs1 ^^ bs2.
 Definition subset  bs1 bs2 := (bs1 && bs2) == bs1.
+Definition diff    bs1 bs2 := bs1 && (bs1 ^^ bs2).
 Definition cardinal bs := #|bs|.
 
 End Operations.
@@ -725,6 +743,7 @@ Parametricity insert.
 Parametricity remove.
 Parametricity symdiff.
 Parametricity subset.
+Parametricity diff.
 Parametricity cardinal.
 
 (******************************************************************************)
@@ -761,6 +780,7 @@ Global Instance inter_fin: inter_of {set T} := @setI _.
 Global Instance union_fin: union_of {set T} := @setU _.
 Global Instance symdiff_fin: symdiff_of {set T} := fun E E' => ((E :\: E') :|: (E' :\: E)).
 Global Instance subset_fin:  subset_of {set T}  := fun E E' => E \subset E'.
+Global Instance diff_fin:    diff_of {set T} := @setD _.
 
 Global Instance cardinal_fin:  cardinal_of nat {set T}  := fun E => #| E |.
 Global Instance keep_min_fin:  keep_min_of {set T}  :=
@@ -800,6 +820,7 @@ Global Instance inter_B     : inter_of 'B_n          := inter.
 Global Instance union_B     : union_of 'B_n          := union.
 Global Instance symdiff_B   : symdiff_of 'B_n        := symdiff.
 Global Instance subset_B    : subset_of 'B_n         := subset.
+Global Instance diff_B    : diff_of 'B_n         := @diff _ _ _.
 Global Instance cardinal_B  : cardinal_of nat 'B_n   := cardinal.
 Global Instance keep_min_B  : keep_min_of 'B_n. Admitted.
 

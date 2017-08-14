@@ -122,3 +122,13 @@ Goal p :&: q == q.
 Proof.
   by coqeal.
 Abort.
+
+Goal p :\: q == p.
+Proof.
+  by coqeal.
+Abort.
+
+Goal #|full_op :\: p|%C == 2.
+Proof.
+  by coqeal.
+Abort.

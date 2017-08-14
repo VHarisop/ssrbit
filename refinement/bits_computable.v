@@ -111,6 +111,7 @@ Global Instance remove_S    : remove_of nat bitseq    := remove (Bits := bitseq)
 Global Instance inter_S     : inter_of bitseq            := inter.
 Global Instance union_S     : union_of bitseq            := union.
 Global Instance symdiff_S   : symdiff_of bitseq          := symdiff.
+Global Instance diff_S      : diff_of bitseq             := diff (Bits := bitseq).
 Global Instance subset_S    : subset_of bitseq           := subset.
 Global Instance card_S      : cardinal_of nat bitseq := cards.
 
@@ -234,6 +235,13 @@ rewrite refinesE => E1 bs1 <- E2 bs2 <- .
 by rewrite /Rfin /fun_hrel Fsymdiff_morphL.
 Qed.
 
+Global Instance Rfin_diff:
+  refines (Rfin ==> Rfin ==> Rfin) diff_op diff_op.
+Proof.
+rewrite refinesE => E1 bs1 <- E2 bs2 <- .
+by rewrite /Rfin /fun_hrel Fdiff_morphL.
+Qed.
+
 Global Instance Rfin_subset:
   refines (Rfin ==> Rfin ==> bool_R) subset_op subset_op.
 Proof.
@@ -333,6 +341,13 @@ Proof.
   by rewrite Ha Hb.
 Qed.
 
+Global Instance Rcard_diff:
+  refines (Rcard ==> Rcard ==> Rcard) diff_op diff_op.
+Proof.
+  rewrite refinesE /Rcard => a a' /= Ha b b' /= Hb.
+  by rewrite Ha Hb.
+Qed.
+
 Global Instance Rcard_subset:
   refines (Rcard ==> Rcard ==> param.bool_R) subset_op subset_op.
 Proof.
@@ -398,6 +413,10 @@ Proof. param_comp symdiff_R. Qed.
 Global Instance RfinC_subset:
   refines (RfinC ==> RfinC ==> bool_R) subset_op subset_op.
 Proof. param_comp subset_R. Qed.
+
+Global Instance RfinC_diff:
+  refines (RfinC ==> RfinC ==> RfinC) diff_op diff_op.
+Proof. param_comp diff_R. Qed.
 
 Global Instance RfinC_card:
   refines (RfinC ==> eq) cardinal_op cardinal_op.
@@ -624,6 +643,13 @@ Proof. param_comp symdiff_R. Qed.
 Global Instance Rbitseq_subset:
   refines (Rbitseq ==> Rbitseq ==> bool_R) subset_op subset_op.
 Proof. param_comp subset_R. Qed.
+
+Global Instance Rbitseq_diff:
+  refines (Rbitseq ==> Rbitseq ==> Rbitseq) diff_op diff_op.
+Proof.
+  eapply refines_trans; tc.
+  param_comp diff_R; rewrite refinesE; by move => x y /= -> z w /= ->.
+Qed.
 
 Global Instance Rbitseq_card:
   refines (Rbitseq ==> eq) cardinal_op cardinal_op.
